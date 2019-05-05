@@ -1,7 +1,7 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2019.4.1"
-    `maven-publish`
+    id "maven-publish"
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
@@ -22,17 +22,20 @@ dependencies {
     compile wpi.deps.vendor.java()
     nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
     nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
-    testCompile 'junit:junit:4.12'
+
+    compile("gov.nist.math:jama:1.0.3")
+
+    testCompile("junit:junit:4.12")
 }
 
 publishing {
     publications {
-        create<MavenPublication>("mavenLocal") {
+        maven(MavenPublication) {
             groupId = "com.spartronics4915"
             artifactId = "SpartronicsLib"
-            version = "2019.1.1"
+            version = "2019.1.0"
 
-            from(components["java"])
+            from components.java
         }
     }
 }
