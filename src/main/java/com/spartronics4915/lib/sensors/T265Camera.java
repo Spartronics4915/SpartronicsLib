@@ -19,12 +19,10 @@ import java.util.function.Supplier;
  */
 public class T265Camera
 {
-    static {
-        System.loadLibrary("t265wrapper");
-    }
+    private long nativeCameraObjectPointer = 0;
 
     public T265Camera(Supplier<Pose2d> poseRecievedCallback,
-            String relocalizationMapPath, Pose2d cameraOffset, double odometryCovariance)
+            String relocalizationMapPath, Pose2d cameraOffset, float odometryCovariance)
     {
         loadRelocalizationMap(relocalizationMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
@@ -39,14 +37,23 @@ public class T265Camera
         Pose2d transVel = Pose2d.exp(velocity);
         sendOdometryRaw(sensorId, frameNumber, (float) transVel.getTranslation().x(), (float) transVel.getTranslation().y());
     }
+    /**
+     * This must be called when you're done with this class or you will get memory leaks.
+     */
+    public native void free();
 
+    private native long newCamera();
+    private native void loadRelocalizationMap(String path);
+    private native void setOdometryInfo(float offsetX, float offsetY, float offsetAng, float measurementCovariance);
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
     private native void openAndStartCamera(Supplier<Pose2d> poseRecievedCallback);
-    private native void loadRelocalizationMap(String path);
-    private native void setOdometryInfo(float offsetX, float offsetY, float offsetAng, double measurementCovariance);
 
     // Thrown if something goes wrong in the native code
     public class CameraJNIException extends RuntimeException
     {
+    }
+
+    static {
+        System.loadLibrary("t265wrapper");
     }
 }

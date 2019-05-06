@@ -9,6 +9,14 @@ extern "C" {
 #endif
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
+ * Method:    newCamera
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamera
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_spartronics4915_lib_sensors_T265Camera
  * Method:    startCamera
  * Signature: ()V
  */
@@ -54,6 +62,14 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_loadReloc
  */
 JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_setOdometryInfo
   (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat);
+
+/*
+ * Class:     com_spartronics4915_lib_sensors_T265Camera
+ * Method:    free
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_free
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
