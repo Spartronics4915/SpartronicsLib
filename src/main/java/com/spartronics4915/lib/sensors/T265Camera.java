@@ -24,10 +24,10 @@ public class T265Camera
     public T265Camera(Supplier<Pose2d> poseRecievedCallback,
             String relocalizationMapPath, Pose2d cameraOffset, float odometryCovariance)
     {
+        nativeCameraObjectPointer = newCamera(poseRecievedCallback);
         loadRelocalizationMap(relocalizationMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
                 (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
-        openAndStartCamera(poseRecievedCallback);
     }
 
     public native void startCamera();
@@ -42,11 +42,10 @@ public class T265Camera
      */
     public native void free();
 
-    private native long newCamera();
+    private native long newCamera(Supplier<Pose2d> poseSupplier);
     private native void loadRelocalizationMap(String path);
     private native void setOdometryInfo(float offsetX, float offsetY, float offsetAng, float measurementCovariance);
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
-    private native void openAndStartCamera(Supplier<Pose2d> poseRecievedCallback);
 
     // Thrown if something goes wrong in the native code
     public class CameraJNIException extends RuntimeException
