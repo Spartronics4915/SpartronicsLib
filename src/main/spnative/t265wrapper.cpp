@@ -68,7 +68,7 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
         
         auto devices = context->query_devices();
         if (devices.size() <= 0)
-            throw new std::runtime_error("No RealSense device found... Is it unplugged?");
+            throw std::runtime_error("No RealSense device found... Is it unplugged?");
         // For now just get the first device
         auto device = new rs2::tm2(devices[0]);
 
@@ -92,11 +92,11 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
     }
     catch (std::exception &e)
     {
-        puts(e.what());
         ensureCache(env, thisObj);
         env->ThrowNew(exception, e.what());
         return static_cast<jlong>(0);
     }
+    return 0;
 }
 
 void Java_com_spartronics4915_lib_sensors_T265Camera_startCamera(JNIEnv *env, jobject thisObj)
