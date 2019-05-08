@@ -1,5 +1,4 @@
 #include "t265wrapper.hpp"
-#include <librealsense2/rs.hpp>
 #include <vector>
 #include <fstream>
 #include <iterator>
@@ -12,7 +11,7 @@ jclass holdingClass = nullptr; // This should always be T265Camera jclass
 jfieldID fieldID = nullptr;    // Field id for the field "nativeCameraObjectPointer"
 jclass exception = nullptr;    // This is "CameraJNIException"
 
-auto const context = new rs2::context();
+rs2::context *context = nullptr;
 
 auto const odometryConfig = R"(
 {
@@ -60,34 +59,17 @@ auto const odometryConfig = R"(
 // Most of the above fields are supposed to be "ignored"
 // See https://github.com/IntelRealSense/librealsense/blob/master/doc/t265.md#wheel-odometry-calibration-file-format
 
-class deviceAndSensors
-{
-  public:
-    deviceAndSensors(rs2::tm2 *dev, rs2::wheel_odometer *odom, rs2::pose_sensor *pose) : device(dev), wheelOdometrySensor(odom), poseSensor(pose)
-    {
-    }
-
-    ~deviceAndSensors()
-    {
-        delete device;
-        delete wheelOdometrySensor;
-        delete poseSensor;
-    }
-
-    const rs2::tm2 *device;
-    rs2::wheel_odometer *wheelOdometrySensor;
-    rs2::pose_sensor *poseSensor;
-};
-
 jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj, jobject supplier)
 {
-    ensureCache(env, thisObj);
     try
     {
+        if (!context)
+            context = new rs2::context();
+        
         auto devices = context->query_devices();
         if (devices.size() <= 0)
             throw new std::runtime_error("No RealSense device found... Is it unplugged?");
-        // For now just get the first one
+        // For now just get the first device
         auto device = new rs2::tm2(devices[0]);
 
         rs2::wheel_odometer *odom = nullptr;
@@ -110,8 +92,27 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
     }
     catch (std::exception &e)
     {
+        puts(e.what());
+        ensureCache(env, thisObj);
         env->ThrowNew(exception, e.what());
         return static_cast<jlong>(0);
+    }
+}
+
+void Java_com_spartronics4915_lib_sensors_T265Camera_startCamera(JNIEnv *env, jobject thisObj)
+{
+    try
+    {
+        ensureCache(env, thisObj);
+
+        auto devAndSensors = getDeviceFromClass(env, thisObj);
+        // TODO: Set callback and start
+        // devAndSensors->poseSensor->start();
+        // devAndSensors->wheelOdometrySensor->start();
+    }
+    catch (std::exception &e)
+    {
+        env->ThrowNew(exception, e.what());
     }
 }
 
@@ -119,6 +120,8 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_stopCamera(JNIEnv *env, job
 {
     try
     {
+        ensureCache(env, thisObj);
+
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         devAndSensors->poseSensor->stop();
         devAndSensors->wheelOdometrySensor->stop();
@@ -133,6 +136,8 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw(JNIEnv *env
 {
     try
     {
+        ensureCache(env, thisObj);
+
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         if (sensorId > UINT8_MAX || frameNumber > UINT32_MAX || sensorId < 0 || frameNumber < 0)
             env->ThrowNew(exception, "sensorId or frameNumber are out of range");
@@ -149,6 +154,8 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_loadRelocalizationMap(JNIEn
 {
     try
     {
+        ensureCache(env, thisObj);
+
         auto pathNativeStr = env->GetStringUTFChars(mapPath, 0);
 
         // Open file and get info
@@ -174,6 +181,8 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_setOdometryInfo(JNIEnv *env
 {
     try
     {
+        ensureCache(env, thisObj);
+
         auto size = snprintf(nullptr, 0, odometryConfig, measureCovariance, xOffset, yOffset, angOffset);
         char buf[size];
         snprintf(buf, size, odometryConfig, xOffset, yOffset, angOffset);
@@ -195,8 +204,6 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_free(JNIEnv *env, jobject t
 
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj)
 {
-    ensureCache(env, thisObj);
-
     auto pointer = env->GetLongField(thisObj, fieldID);
     if (pointer == 0)
         throw std::runtime_error("nativeCameraObjectPointer cannot be 0");
@@ -210,5 +217,5 @@ void ensureCache(JNIEnv *env, jobject thisObj)
     if (!fieldID)
         fieldID = env->GetFieldID(holdingClass, "nativeCameraObjectPointer", "J");
     if (!exception)
-        exception = env->FindClass("com/spartronics4915/lib/sensors/CameraJNIException");
+        exception = env->FindClass("com/spartronics4915/lib/sensors/T265Camera$CameraJNIException");
 }

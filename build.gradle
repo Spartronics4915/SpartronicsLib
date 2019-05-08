@@ -2,6 +2,7 @@ plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2019.4.1"
     id "maven-publish"
+    id "c"
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
@@ -25,7 +26,8 @@ dependencies {
 
     compile("gov.nist.math:jama:1.0.3")
 
-    testCompile("junit:junit:4.12")
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.3.2")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")
 }
 
 publishing {
@@ -37,5 +39,12 @@ publishing {
 
             from components.java
         }
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "PASSED", "SKIPPED", "FAILED"
     }
 }
