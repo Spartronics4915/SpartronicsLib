@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <iterator>
+#include <cmath>
 
 // We use jlongs like pointers, so they better be large enough
 static_assert(sizeof(jlong) >= sizeof(void *));
@@ -13,6 +14,9 @@ jclass exception = nullptr;    // This is "CameraJNIException"
 
 rs2::context *context = nullptr;
 
+// We do this so we don't have to fiddle with files
+// Most of the below fields are supposed to be "ignored"
+// See https://github.com/IntelRealSense/librealsense/blob/master/doc/t265.md#wheel-odometry-calibration-file-format
 auto const odometryConfig = R"(
 {
     "velocimeters": [
@@ -55,17 +59,14 @@ auto const odometryConfig = R"(
     ]
 }
 )";
-// We do this so we don't have to fiddle with files
-// Most of the above fields are supposed to be "ignored"
-// See https://github.com/IntelRealSense/librealsense/blob/master/doc/t265.md#wheel-odometry-calibration-file-format
 
-jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj, jobject supplier)
+jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj)
 {
     try
     {
         if (!context)
             context = new rs2::context();
-        
+
         auto devices = context->query_devices();
         if (devices.size() <= 0)
             throw std::runtime_error("No RealSense device found... Is it unplugged?");
@@ -86,9 +87,21 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
         if (!pose)
             throw new std::runtime_error("Selected device does not have a pose sensor");
 
-        // TODO: Set callback on poseSensor
+        ensureCache(env, thisObj);
+        auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(JJJI)V");
+        if (!callbackMethodID)
+            throw std::runtime_error("consumePoseUpdate method doesn't exist");
 
-        return reinterpret_cast<jlong>(new deviceAndSensors(device, odom, pose));
+        auto consumerCallback = [env, thisObj, callbackMethodID](rs2::frame frame) {
+            auto poseData = frame.as<rs2::pose_frame>().get_pose_data();
+            auto q = poseData.rotation;
+            // rotation is a quaternion so we convert to get an euler angle (yaw)
+            auto yaw = atan2f(2.0f*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
+
+            env->CallVoidMethod(thisObj, callbackMethodID, poseData.translation.x, poseData.translation.y, yaw, poseData.tracker_confidence);
+        };
+
+        return reinterpret_cast<jlong>(new deviceAndSensors(device, odom, pose, new std::function<void (rs2::frame)>(consumerCallback)));
     }
     catch (std::exception &e)
     {
@@ -106,9 +119,8 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_startCamera(JNIEnv *env, jo
         ensureCache(env, thisObj);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
-        // TODO: Set callback and start
-        // devAndSensors->poseSensor->start();
-        // devAndSensors->wheelOdometrySensor->start();
+        devAndSensors->poseSensor->start(*devAndSensors->frameConsumerCallback);
+        devAndSensors->wheelOdometrySensor->start([env](rs2::frame frame){});
     }
     catch (std::exception &e)
     {
@@ -139,6 +151,8 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw(JNIEnv *env
         ensureCache(env, thisObj);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
+        // jints are 32 bit and are signed so we have to be careful
+        // frameNumber should never be greater than UINT32_MAX, but we'll be defensive
         if (sensorId > UINT8_MAX || frameNumber > UINT32_MAX || sensorId < 0 || frameNumber < 0)
             env->ThrowNew(exception, "sensorId or frameNumber are out of range");
 
@@ -215,7 +229,7 @@ void ensureCache(JNIEnv *env, jobject thisObj)
     if (!holdingClass)
         holdingClass = env->GetObjectClass(thisObj);
     if (!fieldID)
-        fieldID = env->GetFieldID(holdingClass, "nativeCameraObjectPointer", "J");
+        fieldID = env->GetFieldID(holdingClass, "mNativeCameraObjectPointer", "J");
     if (!exception)
         exception = env->FindClass("com/spartronics4915/lib/sensors/T265Camera$CameraJNIException");
 }

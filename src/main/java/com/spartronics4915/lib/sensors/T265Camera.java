@@ -1,10 +1,11 @@
 package com.spartronics4915.lib.sensors;
 
-import com.spartronics4915.lib.math.geometry.Pose2d;
-import com.spartronics4915.lib.math.geometry.Twist2d;
-
 import java.nio.file.Paths;
-import java.util.function.Supplier;
+import java.util.function.BiConsumer;
+
+import com.spartronics4915.lib.math.geometry.Pose2d;
+import com.spartronics4915.lib.math.geometry.Rotation2d;
+import com.spartronics4915.lib.math.geometry.Twist2d;
 
 /**
  * Provides a convenient Java interface to the Intel RealSense
@@ -27,12 +28,51 @@ public class T265Camera
         System.load(Paths.get(System.getProperty("user.home"), "libspartronicsnative.so").toAbsolutePath().toString());
     }
 
-    private long nativeCameraObjectPointer = 0;
+    /**
+     * Thrown if something goes wrong in the native code
+     */
+    public static class CameraJNIException extends Exception
+    {
+        // This must be static _and_ have this constructor if you want it to be
+        // thrown from native code
+        public CameraJNIException(String message)
+        {
+            super(message);
+        }
+    }
 
-    public T265Camera(Supplier<Pose2d> poseRecievedCallback,
+    public static enum PoseConfidence
+    {
+        Failed,
+        Low,
+        Medium,
+        High,
+    }
+
+    private long mNativeCameraObjectPointer = 0;
+    private final BiConsumer<Pose2d, PoseConfidence> mPoseConsumer;
+
+    /**
+     * This method constructs a T265 camera and sets it up with the right info.
+     * <code>startCamera</code> must be called before you will get anything; it is
+     * not called in the constructor. Unless you want memory leaks you must call
+     * <code>free</code> when you're done with this class. The garbage collector
+     * will not help you.
+     * 
+     * @param poseConsumer          called every time we recieve a pose from the
+     *                              camera
+     * @param relocalizationMapPath path (in the filesystem) to a relocalization map
+     *                              (you can get one via
+     *                              <code>exportRelocalizationMap</code>)
+     * @param cameraOffset          offset of camera from center of robot
+     * @param odometryCovariance    covariance of the odometry input when doing
+     *                              sensor fusion (you probably tune this)
+     */
+    public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
             String relocalizationMapPath, Pose2d cameraOffset, float odometryCovariance)
     {
-        nativeCameraObjectPointer = newCamera(poseRecievedCallback);
+        mPoseConsumer = poseConsumer;
+        mNativeCameraObjectPointer = newCamera();
         loadRelocalizationMap(relocalizationMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
                 (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
@@ -40,6 +80,7 @@ public class T265Camera
 
     public native void startCamera();
     public native void stopCamera();
+
     public void sendOdometry(int sensorId, int frameNumber, Twist2d velocity)
     {
         Pose2d transVel = Pose2d.exp(velocity);
@@ -51,19 +92,33 @@ public class T265Camera
      * leaks.
      */
     public native void free();
-    private native long newCamera(Supplier<Pose2d> poseSupplier);
+    private native long newCamera();
+    // TODO: Add exportRelocalizationMap
     private native void loadRelocalizationMap(String path);
-    private native void setOdometryInfo(float offsetX, float offsetY, float offsetAng, float measurementCovariance);
+    private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, float measurementCovariance);
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
 
-    /**
-     * Thrown if something goes wrong in the native code
-     */
-    public static class CameraJNIException extends Exception
+    private void consumePoseUpdate(float x, float y, float radians, int confOrdinal)
     {
-        public CameraJNIException(String message)
+        // See https://github.com/IntelRealSense/librealsense/blob/7f2ba0de8769620fd672f7b44101f0758e7e2fb3/include/librealsense2/h/rs_types.h#L115 for ordinals
+        PoseConfidence confidence;
+        switch (confOrdinal)
         {
-            super(message);
+            case 0x0:
+                confidence = PoseConfidence.Failed;
+                break;
+            case 0x1:
+                confidence = PoseConfidence.Low;
+                break;
+            case 0x2:
+                confidence = PoseConfidence.Medium;
+                break;
+            case 0x3:
+                confidence = PoseConfidence.High;
+                break;
+            default:
+                throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
+        mPoseConsumer.accept(new Pose2d(x, y, Rotation2d.fromRadians(radians)), confidence);
     }
 }

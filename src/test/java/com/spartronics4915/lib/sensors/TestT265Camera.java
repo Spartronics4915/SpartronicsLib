@@ -10,7 +10,7 @@ public class TestT265Camera
     @Test
     public void TestNewCamera()
     {
-        new T265Camera(() -> new Pose2d(), "foo", new Pose2d(), 0f);
+        new T265Camera((Pose2d p, T265Camera.PoseConfidence c) -> System.out.println(p + " " + c), "foo", new Pose2d(), 0f);
     }
 
 }

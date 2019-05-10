@@ -10,14 +10,6 @@ extern "C" {
 #endif
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    newCamera
- * Signature: (Ljava/util/function/Supplier;)J
- */
-JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamera
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     com_spartronics4915_lib_sensors_T265Camera
  * Method:    startCamera
  * Signature: ()V
  */
@@ -34,11 +26,19 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_stopCamer
 
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    sendOdometryRaw
- * Signature: (IIFF)V
+ * Method:    free
+ * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw
-  (JNIEnv *, jobject, jint, jint, jfloat, jfloat);
+JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_free
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_spartronics4915_lib_sensors_T265Camera
+ * Method:    newCamera
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamera
+  (JNIEnv *, jobject);
 
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
@@ -58,11 +58,11 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_setOdomet
 
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    free
- * Signature: ()V
+ * Method:    sendOdometryRaw
+ * Signature: (IIFF)V
  */
-JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_free
-  (JNIEnv *, jobject);
+JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw
+  (JNIEnv *, jobject, jint, jint, jfloat, jfloat);
 
 #ifdef __cplusplus
 }
@@ -79,8 +79,6 @@ extern "C" {
 #define com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID -3042686055658047285LL
 #undef com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID
 #define com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID -3387516993124229948LL
-#undef com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID
-#define com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID -7034897190745766939LL
 #ifdef __cplusplus
 }
 #endif
@@ -89,7 +87,7 @@ extern "C" {
 class deviceAndSensors
 {
   public:
-    deviceAndSensors(rs2::tm2 *dev, rs2::wheel_odometer *odom, rs2::pose_sensor *pose) : device(dev), wheelOdometrySensor(odom), poseSensor(pose)
+    deviceAndSensors(rs2::tm2 *dev, rs2::wheel_odometer *odom, rs2::pose_sensor *pose, std::function<void (rs2::frame)> *cb) : device(dev), wheelOdometrySensor(odom), poseSensor(pose), frameConsumerCallback(cb)
     {
     }
 
@@ -98,11 +96,13 @@ class deviceAndSensors
         delete device;
         delete wheelOdometrySensor;
         delete poseSensor;
+        delete frameConsumerCallback;
     }
 
     const rs2::tm2 *device;
     rs2::wheel_odometer *wheelOdometrySensor;
     rs2::pose_sensor *poseSensor;
+    std::function<void (rs2::frame)> *frameConsumerCallback;
 };
 
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj);
