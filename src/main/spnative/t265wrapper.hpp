@@ -42,6 +42,14 @@ JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamer
 
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
+ * Method:    exportRelocalizationMap
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_exportRelocalizationMap
+  (JNIEnv *, jobject, jstring);
+
+/*
+ * Class:     com_spartronics4915_lib_sensors_T265Camera
  * Method:    loadRelocalizationMap
  * Signature: (Ljava/lang/String;)V
  */
@@ -64,21 +72,6 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_setOdomet
 JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw
   (JNIEnv *, jobject, jint, jint, jfloat, jfloat);
 
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* Header for class com_spartronics4915_lib_sensors_T265Camera_CameraJNIException */
-
-#ifndef _Included_com_spartronics4915_lib_sensors_T265Camera_CameraJNIException
-#define _Included_com_spartronics4915_lib_sensors_T265Camera_CameraJNIException
-#ifdef __cplusplus
-extern "C" {
-#endif
-#undef com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID
-#define com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID -3042686055658047285LL
-#undef com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID
-#define com_spartronics4915_lib_sensors_T265Camera_CameraJNIException_serialVersionUID -3387516993124229948LL
 #ifdef __cplusplus
 }
 #endif

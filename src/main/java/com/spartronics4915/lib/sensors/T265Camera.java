@@ -93,7 +93,7 @@ public class T265Camera
      */
     public native void free();
     private native long newCamera();
-    // TODO: Add exportRelocalizationMap
+    private native void exportRelocalizationMap(String path);
     private native void loadRelocalizationMap(String path);
     private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, float measurementCovariance);
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
