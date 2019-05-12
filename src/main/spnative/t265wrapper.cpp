@@ -172,15 +172,15 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_exportRelocalizationMap(JNI
 
         auto pathNativeStr = env->GetStringUTFChars(savePath, 0);
 
-        // Open file and get info
-        auto file = std::basic_ofstream<uint8_t>(pathNativeStr, std::ios::binary);
+        // Open file in binary mode
+        auto file = std::ofstream(pathNativeStr, std::ios::binary);
         if (!file || file.bad())
             throw std::runtime_error("Couldn't open file to write a relocalization map");
 
-        // Get data and write
+        // Get data from sensor and write
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         auto data = devAndSensors->poseSensor->export_localization_map();
-        file.write(data.data(), data.size());
+        file.write(reinterpret_cast<const char *>(data.data()), data.size());
 
         env->ReleaseStringUTFChars(savePath, pathNativeStr);
         file.close();
@@ -200,13 +200,13 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_loadRelocalizationMap(JNIEn
         auto pathNativeStr = env->GetStringUTFChars(mapPath, 0);
 
         // Open file and make a vector to hold contents
-        auto file = std::basic_ifstream<uint8_t>(pathNativeStr, std::ios::binary);
+        auto file = std::ifstream(pathNativeStr, std::ios::binary);
         if (!file || file.bad())
             throw std::runtime_error("Couldn't open file to read a relocalization map");
 
         auto dataVec = std::vector<uint8_t>(
-            std::istreambuf_iterator<uint8_t>(file),
-            std::istreambuf_iterator<uint8_t>());
+            std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>());
 
         // Pass contents to the pose sensor
         auto devAndSensors = getDeviceFromClass(env, thisObj);
