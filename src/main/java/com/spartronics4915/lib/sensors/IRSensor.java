@@ -25,10 +25,7 @@ public abstract class IRSensor
     public boolean isTargetInVoltageRange(double min, double max)
     {
         double v = getVoltage();
-        if (v > min && v < max)
-            return true;
-        else
-            return false;
+        return v > min && v < max;
     }
 
     /**
@@ -39,9 +36,6 @@ public abstract class IRSensor
     public boolean isTargetInDistanceRange(double minDist, double maxDist)
     {
         double d = getDistance();
-        if (d > minDist && d < maxDist)
-            return true;
-        else
-            return false;
+        return d > minDist && d < maxDist;
     }
 }

@@ -61,25 +61,23 @@ public class T265Camera
      * 
      * @param poseConsumer          called every time we recieve a pose from the
      *                              camera
-     * @param relocalizationMapPath path (in the filesystem) to a relocalization map
-     *                              (you can get one via
-     *                              <code>exportRelocalizationMap</code>)
      * @param cameraOffset          offset of camera from center of robot
      * @param odometryCovariance    covariance of the odometry input when doing
      *                              sensor fusion (you probably tune this)
      */
     public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
-            String relocalizationMapPath, Pose2d cameraOffset, float odometryCovariance)
+            Pose2d cameraOffset, float odometryCovariance)
     {
         mPoseConsumer = poseConsumer;
         mNativeCameraObjectPointer = newCamera();
-        loadRelocalizationMap(relocalizationMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
                 (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
     }
 
     public native void startCamera();
     public native void stopCamera();
+    public native void exportRelocalizationMap(String path);
+    public native void loadRelocalizationMap(String path);
 
     public void sendOdometry(int sensorId, int frameNumber, Twist2d velocity)
     {
@@ -93,8 +91,6 @@ public class T265Camera
      */
     public native void free();
     private native long newCamera();
-    private native void exportRelocalizationMap(String path);
-    private native void loadRelocalizationMap(String path);
     private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, float measurementCovariance);
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
 

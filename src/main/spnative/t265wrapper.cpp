@@ -92,7 +92,8 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
         if (!callbackMethodID)
             throw std::runtime_error("consumePoseUpdate method doesn't exist");
 
-        auto consumerCallback = [env, thisObj, callbackMethodID](rs2::frame frame) {
+        // We use a copy capture because callbackMethodID is temporary
+        auto consumerCallback = [=](rs2::frame frame) {
             auto poseData = frame.as<rs2::pose_frame>().get_pose_data();
             auto q = poseData.rotation;
             // rotation is a quaternion so we convert to get an euler angle (yaw)

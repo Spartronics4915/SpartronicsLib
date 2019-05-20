@@ -43,7 +43,13 @@ publishing {
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // Some tests only work if you have the right stuff plugged in
+        // Pass -PallTests if you want tests with the excluded tags
+        if (!project.hasProperty("allTests")) {
+            excludeTags "hardwareDependant"
+        }
+    }
     testLogging {
         events "PASSED", "SKIPPED", "FAILED"
     }
