@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -13,6 +12,11 @@ public class TestCommandStateMachine extends CommandStateMachine
 {
     private class TestCommand extends Command
     {
+
+        public TestCommand()
+        {
+            setRunWhenDisabled(true);
+        }
 
         @Override
         protected void execute()
@@ -40,7 +44,6 @@ public class TestCommandStateMachine extends CommandStateMachine
     @Test
     public void TestScheduler() throws InterruptedException
     {
-
         State testCommandState = addState(new TestCommand());
         testCommandState.addCode(() -> mHasLambdaRun = true);
         testCommandState.addEntryCode(() -> mHasEntryCodeRun = true);
@@ -48,14 +51,13 @@ public class TestCommandStateMachine extends CommandStateMachine
         testCommandState.whenTimeElapsed(finishedState(), 0.01);
         setInitialState(testCommandState);
 
-        double startTime = Timer.getFPGATimestamp();
-        while (Timer.getFPGATimestamp() - startTime <= 1000)
+        double startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime <= 2000)
         {
             /*
-             * XXX: This doesn't work because scheduler.run and Timer.getFPGATimestamp
-             * _don't_ go well together, and getFPGATimestamp exhibits very strange
-             * functonality
+             * Don't use Timer.getFPGATimestamp here... It does something _weird_.
              */
+            this.run();
             Scheduler.getInstance().run();
         }
 

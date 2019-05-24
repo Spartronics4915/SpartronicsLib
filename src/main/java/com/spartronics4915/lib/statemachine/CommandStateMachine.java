@@ -4,25 +4,33 @@ import java.util.List;
 
 import edu.wpi.first.wpilibj.command.Command;
 
-// TODO: Maybe make our own scheduler instead of the wpilib command scheduler?
-public class CommandStateMachine extends Command
+public class CommandStateMachine
 {
+
     private static final State kFinishedState = new State();
 
     private State mInitialState = null;
     private State mCurrentState = null;
     private boolean mIsStateNew = true;
 
-    public CommandStateMachine()
-    {
-        setInterruptible(false);
-    }
-
+    /**
+     * Adds a new empty State to this state machine.
+     * 
+     * @return A new empty State class, ready for use
+     */
     protected final State addState()
     {
         return new State();
     }
 
+    /**
+     * Adds a State to this state machine, with one or more given
+     * {@link edu.wpi.first.wpilibj.command.Command Commands}s pre-added to the
+     * State.
+     * 
+     * @param commands Commands to add to the new state
+     * @return The new State to return
+     */
     protected final State addState(Command... commands)
     {
         State state = addState();
@@ -31,26 +39,49 @@ public class CommandStateMachine extends Command
         return state;
     }
 
+    /**
+     * Adds a State to this state machine, with the given list of
+     * {@link edu.wpi.first.wpilibj.command.Command Commands}s pre-added to the
+     * State.
+     * 
+     * @param commands Commands to add to the new state
+     * @return The new State to return
+     */
     protected final State addState(List<Command> commands)
     {
         return addState(commands.toArray(new Command[commands.size()]));
     }
 
+    /**
+     * Gets a "finished" State, which can be transitioned to when you're done with
+     * your other states. Only useful if you want your state machine to stop (like
+     * in an autononous mode).
+     * 
+     * @return A state that does nothing
+     */
     protected final State finishedState()
     {
         return kFinishedState;
     }
 
-    // TODO: Method chaining?
+    /**
+     * Set the initial state of the state machine.
+     * 
+     * @param state The state to begin in when the state machine starts
+     */
     protected final void setInitialState(State state)
     {
         mInitialState = state;
     }
 
-    @Override
-    public void execute()
+    /**
+     * This method runs the current State and transitions into new States if needed.
+     * This should be called directly <strong>before</strong> wherever you call
+     * {@link edu.wpi.first.wpilibj.command.Scheduler#run()
+     * Scheduler.getInstance().run()}.
+     */
+    public void run()
     {
-        System.out.println("I'm alive!");
         if (mInitialState == null)
             throw new RuntimeException("You must set an initial state");
         if (mCurrentState == null)
@@ -60,11 +91,5 @@ public class CommandStateMachine extends Command
         mIsStateNew = mCurrentState != null && mCurrentState != nextState;
         if (mIsStateNew)
             mCurrentState = nextState;
-    }
-
-    @Override
-    protected final boolean isFinished()
-    {
-        return false;
     }
 }
