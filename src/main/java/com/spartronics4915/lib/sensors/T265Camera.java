@@ -113,7 +113,7 @@ public class T265Camera
      * 
      * @param path Path (with filename) to import from
      */
-    public native void loadRelocalizationMap(String path);
+    public native void importRelocalizationMap(String path);
 
     /**
      * Sends robot velocity as computed from wheel encoders.

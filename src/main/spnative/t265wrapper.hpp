@@ -34,10 +34,10 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_exportRel
 
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    loadRelocalizationMap
+ * Method:    importRelocalizationMap
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_loadRelocalizationMap
+JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_importRelocalizationMap
   (JNIEnv *, jobject, jstring);
 
 /*

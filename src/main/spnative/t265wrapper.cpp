@@ -228,7 +228,7 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_exportRelocalizationMap(JNI
     }
 }
 
-void Java_com_spartronics4915_lib_sensors_T265Camera_loadRelocalizationMap(JNIEnv *env, jobject thisObj, jstring mapPath)
+void Java_com_spartronics4915_lib_sensors_T265Camera_importRelocalizationMap(JNIEnv *env, jobject thisObj, jstring mapPath)
 {
     try
     {

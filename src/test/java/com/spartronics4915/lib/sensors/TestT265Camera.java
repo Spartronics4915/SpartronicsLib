@@ -52,7 +52,7 @@ public class TestT265Camera
             Logger.debug("Successfuly saved relocalization map, we will now try to import it");
 
             // The only check for this one is that it doesn't throw
-            cam.loadRelocalizationMap(mapPath.toString());
+            cam.importRelocalizationMap(mapPath.toString());
             
             Logger.debug("Map imported without errors");
         }
