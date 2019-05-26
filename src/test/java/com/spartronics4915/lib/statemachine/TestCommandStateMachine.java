@@ -2,9 +2,9 @@ package com.spartronics4915.lib.statemachine;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 
@@ -40,19 +40,20 @@ public class TestCommandStateMachine extends CommandStateMachine
     public TestCommandStateMachine()
     {
     }
-
+    
+    @Disabled
     @Test
-    public void TestScheduler() throws InterruptedException
+    public void testScheduler() throws InterruptedException
     {
         State testCommandState = addState(new TestCommand());
         testCommandState.addCode(() -> mHasLambdaRun = true);
         testCommandState.addEntryCode(() -> mHasEntryCodeRun = true);
         testCommandState.addExitCode(() -> mHasExitCodeRun = true);
-        testCommandState.whenTimeElapsed(finishedState(), 0.01);
+        testCommandState.whenTimeElapsed(finishedState(), 0);
         setInitialState(testCommandState);
 
         double startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime <= 2000)
+        while (System.currentTimeMillis() - startTime <= 5000 || !mHasExitCodeRun)
         {
             /*
              * Don't use Timer.getFPGATimestamp here... It does something _weird_.
