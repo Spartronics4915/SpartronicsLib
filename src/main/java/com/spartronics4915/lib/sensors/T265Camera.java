@@ -33,6 +33,7 @@ public class T265Camera
      */
     public static class CameraJNIException extends Exception
     {
+
         // This must be static _and_ have this constructor if you want it to be
         // thrown from native code
         public CameraJNIException(String message)
@@ -50,20 +51,22 @@ public class T265Camera
     }
 
     private long mNativeCameraObjectPointer = 0;
+    private boolean mIsStarted = false;
     private final BiConsumer<Pose2d, PoseConfidence> mPoseConsumer;
 
     /**
      * This method constructs a T265 camera and sets it up with the right info.
-     * <code>startCamera</code> must be called before you will get anything; it is
-     * not called in the constructor. Unless you want memory leaks you must call
-     * <code>free</code> when you're done with this class. The garbage collector
-     * will not help you.
+     * {@link T265Camera#start() start} will not be called, you must call it
+     * yourself. Unless you want memory leaks you must call
+     * {@link T265Camera#free() free} when you're done with this class. The
+     * garbage collector will not help you.
      * 
-     * @param poseConsumer          called every time we recieve a pose from the
-     *                              camera
-     * @param cameraOffset          offset of camera from center of robot
-     * @param odometryCovariance    covariance of the odometry input when doing
-     *                              sensor fusion (you probably tune this)
+     * @param poseConsumer       Called every time we recieve a pose from the
+     *                           camera <i>from a different thread</i>! You must
+     *                           synchronize memory access accross threads!
+     * @param cameraOffset       Offset of camera from center of robot
+     * @param odometryCovariance Covariance of the odometry input when doing
+     *                           sensor fusion (you probably tune this)
      */
     public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
             Pose2d cameraOffset, float odometryCovariance)
@@ -74,11 +77,51 @@ public class T265Camera
                 (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
     }
 
-    public native void startCamera();
-    public native void stopCamera();
+    /**
+     * This allows the callback to recieve data.
+     * 
+     * This will not restart the camera following exportRelocalizationMap.
+     */
+    public void start()
+    {
+        mIsStarted = true;
+    }
+
+    /**
+     * This allows the callback to recieve data, but it does not internally stop the
+     * camera.
+     */
+    public void stop()
+    {
+        mIsStarted = false;
+    }
+
+    /**
+     * Exports a binary relocalization map file to the given path.
+     * This will stop the camera. Because of a librealsense bug the camera isn't be
+     * restarted after you call this method. TODO: Fix that.
+     * 
+     * @param path Path (with filename) to export to
+     */
     public native void exportRelocalizationMap(String path);
+
+    /**
+     * Loads a relocalization map from a binary file.
+     * 
+     * TODO: This method is currently unusable because the camera must be stopped
+     * before loading and then started again.
+     * 
+     * @param path Path (with filename) to import from
+     */
     public native void loadRelocalizationMap(String path);
 
+    /**
+     * Sends robot velocity as computed from wheel encoders.
+     * 
+     * @param sensorId TODO: What is this
+     * @param frameNumber TODO: How to get this
+     * @param velocity The robot's translational velocity
+     */
     public void sendOdometry(int sensorId, int frameNumber, Twist2d velocity)
     {
         Pose2d transVel = Pose2d.exp(velocity);
@@ -90,12 +133,18 @@ public class T265Camera
      * leaks.
      */
     public native void free();
-    private native long newCamera();
+
     private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, float measurementCovariance);
+
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
+
+    private native long newCamera();
 
     private void consumePoseUpdate(float x, float y, float radians, int confOrdinal)
     {
+        if (!mIsStarted)
+            return;
+
         // See https://github.com/IntelRealSense/librealsense/blob/7f2ba0de8769620fd672f7b44101f0758e7e2fb3/include/librealsense2/h/rs_types.h#L115 for ordinals
         PoseConfidence confidence;
         switch (confOrdinal)

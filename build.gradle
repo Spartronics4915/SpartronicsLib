@@ -52,5 +52,6 @@ test {
     }
     testLogging {
         events "PASSED", "SKIPPED", "FAILED"
+        exceptionFormat "full"
     }
 }

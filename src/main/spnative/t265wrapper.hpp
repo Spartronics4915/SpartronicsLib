@@ -10,18 +10,10 @@ extern "C" {
 #endif
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    startCamera
- * Signature: ()V
+ * Method:    newCamera
+ * Signature: ()J
  */
-JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_startCamera
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    stopCamera
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_stopCamera
+JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamera
   (JNIEnv *, jobject);
 
 /*
@@ -30,14 +22,6 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_stopCamer
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_free
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    newCamera
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamera
   (JNIEnv *, jobject);
 
 /*
@@ -80,22 +64,24 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_sendOdome
 class deviceAndSensors
 {
   public:
-    deviceAndSensors(rs2::tm2 *dev, rs2::wheel_odometer *odom, rs2::pose_sensor *pose, std::function<void (rs2::frame)> *cb) : device(dev), wheelOdometrySensor(odom), poseSensor(pose), frameConsumerCallback(cb)
+    deviceAndSensors(
+      rs2::pipeline *pipe, rs2::wheel_odometer *odom, rs2::pose_sensor *pose, jobject globalThis
+    ) : pipeline(pipe), wheelOdometrySensor(odom), poseSensor(pose), globalThis(globalThis)
     {
     }
 
     ~deviceAndSensors()
     {
-        delete device;
+        delete pipeline;
         delete wheelOdometrySensor;
         delete poseSensor;
-        delete frameConsumerCallback;
     }
 
-    const rs2::tm2 *device;
+    rs2::pipeline *pipeline;
     rs2::wheel_odometer *wheelOdometrySensor;
     rs2::pose_sensor *poseSensor;
-    std::function<void (rs2::frame)> *frameConsumerCallback;
+    jobject globalThis;
+    bool isRunning = true;
 };
 
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj);
