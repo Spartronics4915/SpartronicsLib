@@ -28,20 +28,6 @@ public class T265Camera
         System.load(Paths.get(System.getProperty("user.home"), "libspartronicsnative.so").toAbsolutePath().toString());
     }
 
-    /**
-     * Thrown if something goes wrong in the native code
-     */
-    public static class CameraJNIException extends Exception
-    {
-
-        // This must be static _and_ have this constructor if you want it to be
-        // thrown from native code
-        public CameraJNIException(String message)
-        {
-            super(message);
-        }
-    }
-
     public static enum PoseConfidence
     {
         Failed,
@@ -66,13 +52,35 @@ public class T265Camera
      *                           synchronize memory access accross threads!
      * @param cameraOffset       Offset of camera from center of robot
      * @param odometryCovariance Covariance of the odometry input when doing
-     *                           sensor fusion (you probably tune this)
+     *                           sensor fusion (you probably want to tune this)
      */
     public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
             Pose2d cameraOffset, float odometryCovariance)
     {
+        this(poseConsumer, cameraOffset, odometryCovariance, "");
+    }
+
+    /**
+     * This method constructs a T265 camera and sets it up with the right info.
+     * {@link T265Camera#start() start} will not be called, you must call it
+     * yourself. Unless you want memory leaks you must call
+     * {@link T265Camera#free() free} when you're done with this class. The
+     * garbage collector will not help you.
+     * 
+     * @param poseConsumer       Called every time we recieve a pose from the
+     *                           camera <i>from a different thread</i>! You must
+     *                           synchronize memory access accross threads!
+     * @param cameraOffset       Offset of camera from center of robot
+     * @param odometryCovariance Covariance of the odometry input when doing
+     *                           sensor fusion (you probablywant to tune this)
+     * @param relocMapPath       path (including filename) to a relocalization map
+     *                           to load
+     */
+    public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
+            Pose2d cameraOffset, float odometryCovariance, String relocMapPath)
+    {
         mPoseConsumer = poseConsumer;
-        mNativeCameraObjectPointer = newCamera();
+        mNativeCameraObjectPointer = newCamera(relocMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
                 (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
     }
@@ -106,21 +114,11 @@ public class T265Camera
     public native void exportRelocalizationMap(String path);
 
     /**
-     * Loads a relocalization map from a binary file.
-     * 
-     * TODO: This method is currently unusable because the camera must be stopped
-     * before loading and then started again.
-     * 
-     * @param path Path (with filename) to import from
-     */
-    public native void importRelocalizationMap(String path);
-
-    /**
      * Sends robot velocity as computed from wheel encoders.
      * 
-     * @param sensorId TODO: What is this
+     * @param sensorId    TODO: What is this
      * @param frameNumber TODO: How to get this
-     * @param velocity The robot's translational velocity
+     * @param velocity    The robot's translational velocity
      */
     public void sendOdometry(int sensorId, int frameNumber, Twist2d velocity)
     {
@@ -138,7 +136,7 @@ public class T265Camera
 
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
 
-    private native long newCamera();
+    private native long newCamera(String mapPath);
 
     private void consumePoseUpdate(float x, float y, float radians, int confOrdinal)
     {
@@ -165,5 +163,19 @@ public class T265Camera
                 throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
         mPoseConsumer.accept(new Pose2d(x, y, Rotation2d.fromRadians(radians)), confidence);
+    }
+
+    /**
+     * Thrown if something goes wrong in the native code
+     */
+    public static class CameraJNIException extends Exception
+    {
+
+        // This must be static _and_ have this constructor if you want it to be
+        // thrown from native code
+        public CameraJNIException(String message)
+        {
+            super(message);
+        }
     }
 }

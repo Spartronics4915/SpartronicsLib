@@ -11,10 +11,10 @@ extern "C" {
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
  * Method:    newCamera
- * Signature: ()J
+ * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_newCamera
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     com_spartronics4915_lib_sensors_T265Camera
@@ -30,14 +30,6 @@ JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_free
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_exportRelocalizationMap
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     com_spartronics4915_lib_sensors_T265Camera
- * Method:    importRelocalizationMap
- * Signature: (Ljava/lang/String;)V
- */
-JNIEXPORT void JNICALL Java_com_spartronics4915_lib_sensors_T265Camera_importRelocalizationMap
   (JNIEnv *, jobject, jstring);
 
 /*
@@ -84,6 +76,6 @@ class deviceAndSensors
     bool isRunning = true;
 };
 
+void importRelocalizationMap(const char *path, rs2::pose_sensor *pose);
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj);
-
 void ensureCache(JNIEnv *env, jobject thisObj);

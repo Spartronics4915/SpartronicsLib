@@ -6,9 +6,14 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <cstring>
 
 // We use jlongs like pointers, so they better be large enough
 static_assert(sizeof(jlong) >= sizeof(void *));
+
+// Constants
+constexpr auto originNodeName = "origin";
+constexpr auto exportRelocMapStopDelay = std::chrono::seconds(10);
 
 // We cache all of these because we can
 jclass holdingClass = nullptr; // This should always be T265Camera jclass
@@ -18,7 +23,7 @@ jclass exception = nullptr;    // This is "CameraJNIException"
 // We do this so we don't have to fiddle with files
 // Most of the below fields are supposed to be "ignored"
 // See https://github.com/IntelRealSense/librealsense/blob/master/doc/t265.md#wheel-odometry-calibration-file-format
-auto const odometryConfig = R"(
+constexpr auto odometryConfig = R"(
 {
     "velocimeters": [
         {
@@ -61,7 +66,7 @@ auto const odometryConfig = R"(
 }
 )";
 
-jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj)
+jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj, jstring mapPath)
 {
     try
     {
@@ -80,8 +85,51 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
 
         auto pipeline = new rs2::pipeline();
 
+        // Set up a config to ensure we only get tracking capable devices
+        auto config = rs2::config();
+        config.disable_all_streams();
+        config.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF);
+
+        // Get the currently used device
+        auto profile = config.resolve(*pipeline);
+        auto device = profile.get_device();
+        if (!device.is<rs2::tm2>())
+        {
+            pipeline->stop();
+            throw std::runtime_error("The device you have plugged in is not tracking-capable");
+        }
+
+        // Get the odometry/pose sensors
+        // For the T265 both odom and pose will be from the *same* sensor
+        rs2::wheel_odometer *odom = nullptr;
+        rs2::pose_sensor *pose = nullptr;
+        for (const auto sensor : device.query_sensors())
+        {
+            if (sensor.is<rs2::wheel_odometer>())
+                pose = new rs2::pose_sensor(sensor);
+            if (sensor.is<rs2::pose_sensor>())
+                odom = new rs2::wheel_odometer(sensor);
+        }
+        if (!odom)
+            throw new std::runtime_error("Selected device does not support wheel odometry inputs");
+        if (!pose)
+            throw new std::runtime_error("Selected device does not have a pose sensor");
+
+        // Ensure that pipeline->start(...) chooses the devices we just got
+        auto poseSerial = pose->get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+        auto odomSerial = pose->get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+        config.enable_device(poseSerial);
+        config.enable_device(odomSerial);
+
+        // Import the relocalization map, if the path is nonempty
+        auto pathNativeStr = env->GetStringUTFChars(mapPath, 0);
+        if (std::strlen(pathNativeStr) > 0)
+            importRelocalizationMap(pathNativeStr, pose);
+        env->ReleaseStringUTFChars(mapPath, pathNativeStr);
+
         // Imagine writing a C++ wrapper but ignoring most C++ features
         // Looking at you jni.h
+        // (See below for explanatory comment)
         JavaVM *jvm;
         int error = env->GetJavaVM(&jvm);
         if (error)
@@ -101,6 +149,7 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
             JNIEnv *env = nullptr;
             try
             {
+                // Attaching the thread is expensive... TODO: Cache env?
                 int error = jvm->AttachCurrentThread((void **)&env, nullptr);
                 if (error)
                     throw std::runtime_error("Couldn't attach callback thread to jvm");
@@ -129,36 +178,8 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
             }
         };
 
-        auto config = rs2::config();
-        config.disable_all_streams();
-        config.enable_stream(RS2_STREAM_POSE, RS2_FORMAT_6DOF); // This will ensure we only get tracking capable devices
-
         // Start streaming
-        auto profile = pipeline->start(config, consumerCallback);
-
-        // Get the currently used device
-        auto device = profile.get_device();
-        if (!device.is<rs2::tm2>())
-        {
-            pipeline->stop();
-            throw std::runtime_error("The device you have plugged in is not tracking-capable");
-        }
-
-        // Get the odometry/pose sensors
-        // For the T265 both odom and pose will be from the *same* sensor
-        rs2::wheel_odometer *odom = nullptr;
-        rs2::pose_sensor *pose = nullptr;
-        for (const auto sensor : device.query_sensors())
-        {
-            if (sensor.is<rs2::wheel_odometer>())
-                pose = new rs2::pose_sensor(sensor);
-            if (sensor.is<rs2::pose_sensor>())
-                odom = new rs2::wheel_odometer(sensor);
-        }
-        if (!odom)
-            throw new std::runtime_error("Selected device does not support wheel odometry inputs");
-        if (!pose)
-            throw new std::runtime_error("Selected device does not have a pose sensor");
+        pipeline->start(config, consumerCallback);
 
         return reinterpret_cast<jlong>(new deviceAndSensors(pipeline, odom, pose, globalThis));
     }
@@ -211,53 +232,54 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_exportRelocalizationMap(JNI
 
         // I know, this is really gross...
         // Unfortunately there is apparently no way to figure out if we're ready to export the map
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        // https://github.com/IntelRealSense/librealsense/issues/4024#issuecomment-494258285
+        std::this_thread::sleep_for(exportRelocMapStopDelay);
+
+        // set_static_node fails if the confidence is not High
+        auto success = devAndSensors->poseSensor->set_static_node(originNodeName, rs2_vector{0, 0, 0}, rs2_quaternion{0, 0, 0, 1});
+        if (!success)
+            throw std::runtime_error("Couldn't set static node while exporting a relocalization map... Your confidence must be \"High\" for this to work.");
 
         auto data = devAndSensors->poseSensor->export_localization_map();
         file.write(reinterpret_cast<const char *>(data.begin().base()), data.size());
 
         env->ReleaseStringUTFChars(savePath, pathNativeStr);
-        file.close();
+
+        // File automatically get closed at end of scope
 
         // TODO: Camera never gets started again...
         // If we try to call pipeline->start() it doesn't work. Bug in librealsense?
     }
     catch (std::exception &e)
     {
-        env->ThrowNew(exception, e.what());
+        // TODO: Make sleep time configurable (this will probably be a common issue users run into)
+        auto what = std::string(e.what());
+        what += " (If you got something like \"null pointer passed for argument \"buffer\"\", this means that you have a very large relocalization map, and you should increase exportRelocMapStopDelay in ";
+        what += __FILE__;
+        what += ")";
+        env->ThrowNew(exception, what.c_str());
     }
 }
 
-void Java_com_spartronics4915_lib_sensors_T265Camera_importRelocalizationMap(JNIEnv *env, jobject thisObj, jstring mapPath)
+void importRelocalizationMap(const char *path, rs2::pose_sensor *poseSensor)
 {
-    try
-    {
-        ensureCache(env, thisObj);
+    // Open file and make a vector to hold contents
+    auto file = std::ifstream(path, std::ios::binary);
+    if (!file || file.bad())
+        throw std::runtime_error("Couldn't open file to read a relocalization map");
 
-        auto pathNativeStr = env->GetStringUTFChars(mapPath, 0);
+    auto dataVec = std::vector<uint8_t>(
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>());
 
-        // Open file and make a vector to hold contents
-        auto file = std::ifstream(pathNativeStr, std::ios::binary);
-        if (!file || file.bad())
-            throw std::runtime_error("Couldn't open file to read a relocalization map");
+    // Pass contents to the pose sensor
+    auto success = poseSensor->import_localization_map(dataVec);
+    if (!success)
+        throw std::runtime_error("import_localization_map returned a value indicating failure");
 
-        auto dataVec = std::vector<uint8_t>(
-            std::istreambuf_iterator<char>(file),
-            std::istreambuf_iterator<char>());
+    // TODO: Transform by get_static_node("origin", ...)
 
-        // Pass contents to the pose sensor
-        auto devAndSensors = getDeviceFromClass(env, thisObj);
-        auto success = devAndSensors->poseSensor->import_localization_map(dataVec);
-        if (!success)
-            throw std::runtime_error("import_localization_map returned a value indicating failure");
-
-        env->ReleaseStringUTFChars(mapPath, pathNativeStr);
-        file.close();
-    }
-    catch (std::exception &e)
-    {
-        env->ThrowNew(exception, e.what());
-    }
+    file.close();
 }
 
 void Java_com_spartronics4915_lib_sensors_T265Camera_setOdometryInfo(JNIEnv *env, jobject thisObj, jfloat xOffset, jfloat yOffset, jfloat angOffset, jfloat measureCovariance)

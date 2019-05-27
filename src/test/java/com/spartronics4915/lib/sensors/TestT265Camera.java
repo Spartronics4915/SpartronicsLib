@@ -32,15 +32,17 @@ public class TestT265Camera
             cam = new T265Camera((Pose2d p, T265Camera.PoseConfidence c) ->
             {
                 mDataRecieved = true;
+                System.out.println("Got pose with confidence " + c);
             }, new Pose2d(), 0f);
 
             // Just make sure this doesn't throw
             cam.sendOdometry(0, 0, new Twist2d(0, 0, 0));
 
             cam.start();
-            Logger.debug("Waiting 1 seconds to recieve data...");
-            Thread.sleep(1000);
-            assertTrue(mDataRecieved, "No pose data was recieved after 1 second... Try moving the camera?");
+            Logger.debug(
+                    "Waiting 5 seconds to recieve data... Move the camera around in a cross pattern for best results. This will not work unless you get to High confidence.");
+            Thread.sleep(5000);
+            assertTrue(mDataRecieved, "No pose data was recieved after 5 seconds... Try moving the camera?");
             cam.stop();
 
             Logger.debug("Got pose data, exporting relocalization map to java.io.tmpdir...");
@@ -51,10 +53,14 @@ public class TestT265Camera
                 fail("Relocalization map file length was 0");
             Logger.debug("Successfuly saved relocalization map, we will now try to import it");
 
-            // The only check for this one is that it doesn't throw
-            cam.importRelocalizationMap(mapPath.toString());
-            
-            Logger.debug("Map imported without errors");
+            cam.free();
+
+            // Try making a new camera and importing the map
+            cam = new T265Camera((Pose2d p, T265Camera.PoseConfidence c) ->
+            {
+            }, new Pose2d(), 0f, mapPath.toString());
+
+            Logger.debug("Map imported without errors!");
         }
         finally
         {
