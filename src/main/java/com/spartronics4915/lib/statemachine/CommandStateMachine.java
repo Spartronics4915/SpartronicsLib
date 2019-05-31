@@ -4,7 +4,7 @@ import java.util.List;
 
 import edu.wpi.first.wpilibj.command.Command;
 
-public class CommandStateMachine
+abstract public class CommandStateMachine
 {
 
     private static final State kFinishedState = new State();
@@ -79,9 +79,20 @@ public class CommandStateMachine
      * This should be called directly <strong>before</strong> wherever you call
      * {@link edu.wpi.first.wpilibj.command.Scheduler#run()
      * Scheduler.getInstance().run()}.
+     * 
+     * @param firstRun Is this the first run (if true is passed this state machine
+     *                 will be reset)
      */
-    public void run()
+    public final void run(boolean firstRun)
     {
+        if (firstRun)
+        {
+            mInitialState = null;
+            mCurrentState = null;
+            mIsStateNew = true;
+            setup();
+        }
+
         if (mInitialState == null)
             throw new RuntimeException("You must set an initial state");
         if (mCurrentState == null)
@@ -92,4 +103,10 @@ public class CommandStateMachine
         if (mIsStateNew)
             mCurrentState = nextState;
     }
+
+    /**
+     * Override this method and call {@link CommandStateMachine#addState()}, etc
+     * here.
+     */
+    abstract void setup();
 }

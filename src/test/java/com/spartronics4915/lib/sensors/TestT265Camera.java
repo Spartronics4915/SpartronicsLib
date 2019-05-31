@@ -16,7 +16,8 @@ import org.junit.jupiter.api.Test;
 public class TestT265Camera
 {
 
-    private volatile boolean mDataRecieved = false;
+    private boolean mDataRecieved = false;
+    private final Object mLock = new Object();
 
     @Tag("hardwareDependant")
     @Test
@@ -31,7 +32,10 @@ public class TestT265Camera
         {
             cam = new T265Camera((Pose2d p, T265Camera.PoseConfidence c) ->
             {
-                mDataRecieved = true;
+                synchronized (mLock)
+                {
+                    mDataRecieved = true;
+                }
                 System.out.println("Got pose with confidence " + c);
             }, new Pose2d(), 0f);
 
@@ -42,8 +46,11 @@ public class TestT265Camera
             Logger.debug(
                     "Waiting 5 seconds to recieve data... Move the camera around in a cross pattern for best results. This will not work unless you get to High confidence.");
             Thread.sleep(5000);
-            assertTrue(mDataRecieved, "No pose data was recieved after 5 seconds... Try moving the camera?");
             cam.stop();
+            synchronized (mLock)
+            {
+                assertTrue(mDataRecieved, "No pose data was recieved after 5 seconds... Try moving the camera?");
+            }
 
             Logger.debug("Got pose data, exporting relocalization map to java.io.tmpdir...");
             Path mapPath = Paths.get(System.getProperty("java.io.tmpdir"), "map.bin").toAbsolutePath();
