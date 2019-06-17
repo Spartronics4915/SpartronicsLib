@@ -80,12 +80,11 @@ abstract public class CommandStateMachine
      * {@link edu.wpi.first.wpilibj.command.Scheduler#run()
      * Scheduler.getInstance().run()}.
      * 
-     * @param firstRun Is this the first run (if true is passed this state machine
-     *                 will be reset)
+     * @param shouldReset Should everything be reset (this is true on the first run)
      */
-    public final void run(boolean firstRun)
+    public final void run(boolean shouldReset)
     {
-        if (firstRun)
+        if (shouldReset)
         {
             mInitialState = null;
             mCurrentState = null;

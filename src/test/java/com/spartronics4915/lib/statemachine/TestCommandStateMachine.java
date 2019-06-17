@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.spartronics4915.lib.subsystems.Subsystem;
+
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

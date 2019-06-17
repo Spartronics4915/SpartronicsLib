@@ -1,5 +1,8 @@
 package com.spartronics4915.lib.statemachine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.wpi.first.wpilibj.command.Scheduler;
 
 public final class StateMachineScheduler
@@ -8,8 +11,11 @@ public final class StateMachineScheduler
     private static StateMachineScheduler sInstance = null;
 
     private Scheduler mScheduler;
+
     private CommandStateMachine mStateMachine = null;
-    private boolean mIsFirstRun = true;
+    private boolean mHasBeenStopped = true;
+
+    private List<Loop> mPersistentLoops = new ArrayList<>();
 
     public static StateMachineScheduler getInstance()
     {
@@ -28,32 +34,42 @@ public final class StateMachineScheduler
         mStateMachine = csm;
     }
 
+    public void addPersistentLoop(Loop l)
+    {
+        mPersistentLoops.add(l);
+    }
+
     /**
-     * This method calls {@link CommandStateMachine#run()} and then calls
-     * {@link edu.wpi.first.wpilibj.command.Scheduler#run()
+     * This method calls persistient runnables and {@link CommandStateMachine#run()}
+     * and then calls {@link edu.wpi.first.wpilibj.command.Scheduler#run()
      * Scheduler.getInstance().run()}. Put this in your {@code teleopPeriodic} and
      * {@code autonomousPeriodic} methods.
      */
     public void run()
     {
-        if (mIsFirstRun)
+        if (mHasBeenStopped)
             mScheduler.enable();
+
+        for (Loop persistLoop : mPersistentLoops)
+            persistLoop.run(mHasBeenStopped);
+
         if (mStateMachine != null)
-            mStateMachine.run(mIsFirstRun);
+            mStateMachine.run(mHasBeenStopped);
+
         mScheduler.run();
 
-        mIsFirstRun = false;
+        mHasBeenStopped = false;
     }
 
     /**
-     * Resets the scheduler in a way that will fully reset the underlying state
+     * Stops the scheduler in a way that will fully reset the underlying state
      * machine and commands.
      * 
      * Call this in your {@code disabledInit} methods.
      */
-    public void reset()
+    public void stop()
     {
         mScheduler.disable();
-        mIsFirstRun = true;
+        mHasBeenStopped = true;
     }
 }

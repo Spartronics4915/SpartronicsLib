@@ -30,19 +30,19 @@ public class TestT265Camera
         T265Camera cam = null;
         try
         {
-            cam = new T265Camera((Pose2d p, T265Camera.PoseConfidence c) ->
+            cam = new T265Camera(new Pose2d(), 0f);
+
+            // Just make sure this doesn't throw
+            cam.sendOdometry(0, 0, new Twist2d(0, 0, 0));
+
+            cam.start((Pose2d p, T265Camera.PoseConfidence c) ->
             {
                 synchronized (mLock)
                 {
                     mDataRecieved = true;
                 }
                 System.out.println("Got pose with confidence " + c);
-            }, new Pose2d(), 0f);
-
-            // Just make sure this doesn't throw
-            cam.sendOdometry(0, 0, new Twist2d(0, 0, 0));
-
-            cam.start();
+            });
             Logger.debug(
                     "Waiting 5 seconds to recieve data... Move the camera around in a cross pattern for best results. This will not work unless you get to High confidence.");
             Thread.sleep(5000);
@@ -63,9 +63,7 @@ public class TestT265Camera
             cam.free();
 
             // Try making a new camera and importing the map
-            cam = new T265Camera((Pose2d p, T265Camera.PoseConfidence c) ->
-            {
-            }, new Pose2d(), 0f, mapPath.toString());
+            cam = new T265Camera(new Pose2d(), 0f, mapPath.toString());
 
             Logger.debug("Map imported without errors!");
         }

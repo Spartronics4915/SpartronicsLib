@@ -38,7 +38,9 @@ public class T265Camera
 
     private long mNativeCameraObjectPointer = 0;
     private boolean mIsStarted = false;
-    private final BiConsumer<Pose2d, PoseConfidence> mPoseConsumer;
+    private Pose2d mZeroingOffset = Pose2d.identity();
+    private Pose2d mLastRecievedPose = Pose2d.identity();
+    private BiConsumer<Pose2d, PoseConfidence> mPoseConsumer = null;
 
     /**
      * This method constructs a T265 camera and sets it up with the right info.
@@ -47,17 +49,13 @@ public class T265Camera
      * {@link T265Camera#free() free} when you're done with this class. The
      * garbage collector will not help you.
      * 
-     * @param poseConsumer       Called every time we recieve a pose from the
-     *                           camera <i>from a different thread</i>! You must
-     *                           synchronize memory access accross threads!
      * @param cameraOffset       Offset of camera from center of robot
      * @param odometryCovariance Covariance of the odometry input when doing
      *                           sensor fusion (you probably want to tune this)
      */
-    public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
-            Pose2d cameraOffset, float odometryCovariance)
+    public T265Camera(Pose2d cameraOffset, float odometryCovariance)
     {
-        this(poseConsumer, cameraOffset, odometryCovariance, "");
+        this(cameraOffset, odometryCovariance, "");
     }
 
     /**
@@ -67,31 +65,33 @@ public class T265Camera
      * {@link T265Camera#free() free} when you're done with this class. The
      * garbage collector will not help you.
      * 
-     * @param poseConsumer       Called every time we recieve a pose from the
-     *                           camera <i>from a different thread</i>! You must
-     *                           synchronize memory access accross threads!
      * @param cameraOffset       Offset of camera from center of robot
      * @param odometryCovariance Covariance of the odometry input when doing
      *                           sensor fusion (you probablywant to tune this)
      * @param relocMapPath       path (including filename) to a relocalization map
      *                           to load
      */
-    public T265Camera(BiConsumer<Pose2d, PoseConfidence> poseConsumer,
-            Pose2d cameraOffset, float odometryCovariance, String relocMapPath)
+    public T265Camera(Pose2d cameraOffset, float odometryCovariance, String relocMapPath)
     {
-        mPoseConsumer = poseConsumer;
         mNativeCameraObjectPointer = newCamera(relocMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
                 (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
     }
 
     /**
-     * This allows the callback to recieve data.
+     * This allows the user-provided pose recieve callback to recieve data.
+     * <p>
+     * This will not restart the camera following exportRelocalizationMap. You will
+     * have to call {@link T265Camera#free()} and make a new {@link T265Camera}.
+     * This is related to what appears to be a bug in librealsense.
      * 
-     * This will not restart the camera following exportRelocalizationMap.
+     * @param poseConsumer Called every time we recieve a pose from the
+     *                     camera <i>from a different thread</i>! You must
+     *                     synchronize memory access accross threads!
      */
-    public void start()
+    public synchronized void start(BiConsumer<Pose2d, PoseConfidence> poseConsumer)
     {
+        mPoseConsumer = poseConsumer;
         mIsStarted = true;
     }
 
@@ -99,7 +99,7 @@ public class T265Camera
      * This allows the callback to recieve data, but it does not internally stop the
      * camera.
      */
-    public void stop()
+    public synchronized void stop()
     {
         mIsStarted = false;
     }
@@ -127,6 +127,16 @@ public class T265Camera
     }
 
     /**
+     * This zeroes the camera pose to the provided new pose.
+     * 
+     * @param newPose The new pose the camera should be at.
+     */
+    public synchronized void setPose(Pose2d newPose)
+    {
+        mZeroingOffset = newPose.transformBy(mLastRecievedPose.inverse());
+    }
+
+    /**
      * This must be called when you're done with this class or you will get memory
      * leaks.
      */
@@ -138,7 +148,7 @@ public class T265Camera
 
     private native long newCamera(String mapPath);
 
-    private void consumePoseUpdate(float x, float y, float radians, int confOrdinal)
+    private synchronized void consumePoseUpdate(float x, float y, float radians, int confOrdinal)
     {
         if (!mIsStarted)
             return;
@@ -162,7 +172,7 @@ public class T265Camera
             default:
                 throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
-        mPoseConsumer.accept(new Pose2d(x, y, Rotation2d.fromRadians(radians)), confidence);
+        mPoseConsumer.accept(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset), confidence);
     }
 
     /**
