@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 
 import com.spartronics4915.lib.math.geometry.Pose2d;
 import com.spartronics4915.lib.math.geometry.Twist2d;
+import com.spartronics4915.lib.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.util.Logger;
 
 import org.junit.jupiter.api.Tag;
@@ -35,13 +36,13 @@ public class TestT265Camera
             // Just make sure this doesn't throw
             cam.sendOdometry(0, 0, new Twist2d(0, 0, 0));
 
-            cam.start((Pose2d p, T265Camera.PoseConfidence c) ->
+            cam.start((CameraUpdate update) ->
             {
                 synchronized (mLock)
                 {
                     mDataRecieved = true;
                 }
-                System.out.println("Got pose with confidence " + c);
+                System.out.println("Got pose with confidence " + update.pose);
             });
             Logger.debug(
                     "Waiting 5 seconds to recieve data... Move the camera around in a cross pattern for best results. This will not work unless you get to High confidence.");

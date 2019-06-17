@@ -7,6 +7,7 @@ import com.spartronics4915.lib.math.geometry.Pose2d;
 import com.spartronics4915.lib.math.geometry.Rotation2d;
 import com.spartronics4915.lib.math.geometry.Twist2d;
 import com.spartronics4915.lib.sensors.T265Camera;
+import com.spartronics4915.lib.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.statemachine.Loop;
 import com.spartronics4915.lib.subsystems.Subsystem;
 import com.spartronics4915.lib.subsystems.drive.Drive;
@@ -91,10 +92,9 @@ public class RobotStateEstimator implements Loop
             mRightPrevDist = mDrive.getRightDistanceInches();
 
             // Called from a different thread... We avoid data races because RobotSteteMap is thread-safe
-            mSLAMCamera.start((Pose2d pose, T265Camera.PoseConfidence conf) ->
+            mSLAMCamera.start((CameraUpdate update) ->
             {
-                // TODO: Fix velocities
-                mCameraStateMap.addObservations(Timer.getFPGATimestamp(), pose, Twist2d.identity(), Twist2d.identity());
+                mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, update.velocity);
             });
             mSLAMCamera.setPose(Pose2d.identity());
         }

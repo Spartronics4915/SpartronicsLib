@@ -159,11 +159,11 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
                 // rotation is a quaternion so we must convert to an euler angle (yaw)
                 auto yaw = atan2f(2.0 * (q.z * q.w + q.x * q.y), -1.0 + 2.0 * (q.w * q.w + q.x * q.x));
 
-                auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFI)V");
+                auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFFI)V");
                 if (!callbackMethodID)
                     throw std::runtime_error("consumePoseUpdate method doesn't exist");
 
-                env->CallVoidMethod(globalThis, callbackMethodID, poseData.translation.x, poseData.translation.y, yaw, poseData.tracker_confidence);
+                env->CallVoidMethod(globalThis, callbackMethodID, poseData.translation.x, poseData.translation.y, yaw, poseData.velocity.x, poseData.tracker_confidence);
             }
             catch (std::exception &e)
             {

@@ -8,10 +8,12 @@ import com.spartronics4915.lib.util.InterpolatingTreeMap;
 
 public class RobotStateMap
 {
+
     private static final int kObservationBufferSize = 100;
 
     static public class State implements Interpolable<State>
     {
+
         public Pose2d pose;
         public Twist2d integrationVelocity, predictedVelocity;
         public double timestamp;
@@ -21,7 +23,7 @@ public class RobotStateMap
             this.pose = new Pose2d();
             this.integrationVelocity = Twist2d.identity();
             this.predictedVelocity = Twist2d.identity();
-            this.timestamp =  0;
+            this.timestamp = 0;
         }
 
         public State(State other)
@@ -51,19 +53,17 @@ public class RobotStateMap
         @Override
         public State interpolate(final State other, double pct)
         {
-            if(pct <= 0)
+            if (pct <= 0)
                 return new State(this);
-            else
-            if(pct >= 0)
+            else if (pct >= 0)
                 return new State(other);
             else
             {
                 final State s = new State(
-                    this.pose.interpolate(other.pose, pct),
-                    this.integrationVelocity.interpolate(other.integrationVelocity, pct),
-                    this.predictedVelocity.interpolate(other.predictedVelocity, pct),
-                    this.timestamp + pct*(other.timestamp - this.timestamp)
-                );
+                        this.pose.interpolate(other.pose, pct),
+                        this.integrationVelocity.interpolate(other.integrationVelocity, pct),
+                        this.predictedVelocity.interpolate(other.predictedVelocity, pct),
+                        this.timestamp + pct * (other.timestamp - this.timestamp));
                 return s;
             }
         }
@@ -83,8 +83,8 @@ public class RobotStateMap
     public synchronized void reset(double startTime, Pose2d initialPose)
     {
         mStateMap = new InterpolatingTreeMap<>(kObservationBufferSize);
-        mStateMap.put(new InterpolatingDouble(startTime), 
-                      new State(initialPose, startTime));
+        mStateMap.put(new InterpolatingDouble(startTime),
+                new State(initialPose, startTime));
         mDistanceDriven = 0.0;
     }
 
@@ -93,10 +93,10 @@ public class RobotStateMap
         mDistanceDriven = 0.0;
     }
 
-    public synchronized void addObservations(double timestamp, 
-                                            Pose2d pose,
-                                            Twist2d velI,
-                                            Twist2d velP)
+    public synchronized void addObservations(double timestamp,
+            Pose2d pose,
+            Twist2d velI,
+            Twist2d velP)
     {
         InterpolatingDouble ts = new InterpolatingDouble(timestamp);
         mStateMap.put(ts, new State(pose, velI, velP, timestamp));

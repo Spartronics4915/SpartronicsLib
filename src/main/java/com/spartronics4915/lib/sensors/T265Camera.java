@@ -2,6 +2,7 @@ package com.spartronics4915.lib.sensors;
 
 import java.nio.file.Paths;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import com.spartronics4915.lib.math.geometry.Pose2d;
 import com.spartronics4915.lib.math.geometry.Rotation2d;
@@ -36,11 +37,25 @@ public class T265Camera
         High,
     }
 
+    public static class CameraUpdate
+    {
+        public final Pose2d pose;
+        public final Twist2d velocity;
+        public final PoseConfidence confidence;
+
+        public CameraUpdate(Pose2d pose, Twist2d velocity, PoseConfidence confidence)
+        {
+            this.pose = pose;
+            this.velocity = velocity;
+            this.confidence = confidence;
+        }
+    }
+
     private long mNativeCameraObjectPointer = 0;
     private boolean mIsStarted = false;
     private Pose2d mZeroingOffset = Pose2d.identity();
     private Pose2d mLastRecievedPose = Pose2d.identity();
-    private BiConsumer<Pose2d, PoseConfidence> mPoseConsumer = null;
+    private Consumer<CameraUpdate> mPoseConsumer = null;
 
     /**
      * This method constructs a T265 camera and sets it up with the right info.
@@ -89,7 +104,7 @@ public class T265Camera
      *                     camera <i>from a different thread</i>! You must
      *                     synchronize memory access accross threads!
      */
-    public synchronized void start(BiConsumer<Pose2d, PoseConfidence> poseConsumer)
+    public synchronized void start(Consumer<CameraUpdate> poseConsumer)
     {
         mPoseConsumer = poseConsumer;
         mIsStarted = true;
@@ -148,7 +163,7 @@ public class T265Camera
 
     private native long newCamera(String mapPath);
 
-    private synchronized void consumePoseUpdate(float x, float y, float radians, int confOrdinal)
+    private synchronized void consumePoseUpdate(float x, float y, float radians, float xVel, int confOrdinal)
     {
         if (!mIsStarted)
             return;
@@ -172,7 +187,7 @@ public class T265Camera
             default:
                 throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
-        mPoseConsumer.accept(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset), confidence);
+        mPoseConsumer.accept(new CameraUpdate(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset), new Twist2d(xVel, 0.0, 0.0), confidence));
     }
 
     /**
