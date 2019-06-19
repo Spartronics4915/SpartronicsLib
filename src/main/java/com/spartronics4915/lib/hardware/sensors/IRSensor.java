@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.sensors;
+package com.spartronics4915.lib.hardware.sensors;
 
 import edu.wpi.first.wpilibj.AnalogInput;
 

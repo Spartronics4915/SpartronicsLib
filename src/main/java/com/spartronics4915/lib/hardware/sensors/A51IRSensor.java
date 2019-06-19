@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.sensors;
+package com.spartronics4915.lib.hardware.sensors;
 
 public class A51IRSensor extends IRSensor
 {

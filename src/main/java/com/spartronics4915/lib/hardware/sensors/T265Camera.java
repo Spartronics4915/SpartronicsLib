@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.sensors;
+package com.spartronics4915.lib.hardware.sensors;
 
 import java.nio.file.Paths;
 import java.util.function.BiConsumer;

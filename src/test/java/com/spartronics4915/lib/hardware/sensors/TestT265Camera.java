@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.sensors;
+package com.spartronics4915.lib.hardware.sensors;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -8,7 +8,7 @@ import java.nio.file.Paths;
 
 import com.spartronics4915.lib.math.geometry.Pose2d;
 import com.spartronics4915.lib.math.geometry.Twist2d;
-import com.spartronics4915.lib.sensors.T265Camera.CameraUpdate;
+import com.spartronics4915.lib.hardware.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.util.Logger;
 
 import org.junit.jupiter.api.Tag;
