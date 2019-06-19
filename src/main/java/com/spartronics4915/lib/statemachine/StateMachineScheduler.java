@@ -15,8 +15,6 @@ public final class StateMachineScheduler
     private CommandStateMachine mStateMachine = null;
     private boolean mHasBeenStopped = true;
 
-    private List<Loop> mPersistentLoops = new ArrayList<>();
-
     public static StateMachineScheduler getInstance()
     {
         if (sInstance == null)
@@ -34,11 +32,6 @@ public final class StateMachineScheduler
         mStateMachine = csm;
     }
 
-    public void addPersistentLoop(Loop l)
-    {
-        mPersistentLoops.add(l);
-    }
-
     /**
      * This method calls {@link CommandStateMachine#run()}
      * and then calls {@link edu.wpi.first.wpilibj.command.Scheduler#run()
@@ -49,9 +42,6 @@ public final class StateMachineScheduler
     {
         if (mHasBeenStopped)
             mScheduler.enable();
-
-        for (Loop persistLoop : mPersistentLoops)
-            persistLoop.run(mHasBeenStopped);
 
         if (mStateMachine != null)
             mStateMachine.run(mHasBeenStopped);

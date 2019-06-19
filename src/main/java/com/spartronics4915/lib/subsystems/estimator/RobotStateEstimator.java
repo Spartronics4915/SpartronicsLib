@@ -1,5 +1,6 @@
-package com.spartronics4915.lib.loops.estimator;
+package com.spartronics4915.lib.subsystems.estimator;
 
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -8,14 +9,14 @@ import com.spartronics4915.lib.math.geometry.Rotation2d;
 import com.spartronics4915.lib.math.geometry.Twist2d;
 import com.spartronics4915.lib.sensors.T265Camera;
 import com.spartronics4915.lib.sensors.T265Camera.CameraUpdate;
-import com.spartronics4915.lib.statemachine.Loop;
-import com.spartronics4915.lib.subsystems.drive.Drive;
+import com.spartronics4915.lib.subsystems.Subsystem;
+import com.spartronics4915.lib.subsystems.drive.AbstractDrive;
 import com.spartronics4915.lib.util.Kinematics;
 
 /**
  * This loop keeps track of robot state whenever the robot is enabled.
  */
-public class RobotStateEstimator implements Loop
+public class RobotStateEstimator extends Subsystem
 {
 
     /**
@@ -25,7 +26,7 @@ public class RobotStateEstimator implements Loop
     private RobotStateMap mEncoderStateMap = new RobotStateMap();
     private RobotStateMap mCameraStateMap = new RobotStateMap();
 
-    private Drive mDrive;
+    private AbstractDrive mDrive;
     private Kinematics mKinematics;
     private T265Camera mSLAMCamera;
 
@@ -34,11 +35,16 @@ public class RobotStateEstimator implements Loop
 
     private static final Pose2d kZeroPose = Pose2d.identity();
 
-    public RobotStateEstimator(Drive driveSubsystem, Kinematics kinematics, T265Camera slamra)
+    public RobotStateEstimator(AbstractDrive driveSubsystem, Kinematics kinematics, T265Camera slamra)
     {
         mDrive = driveSubsystem;
         mKinematics = kinematics;
         mSLAMCamera = slamra;
+
+        reset();
+
+        // Run this at 100 Hz
+        new Notifier(this::run).startPeriodic(1 / 100.0);
     }
 
     public RobotStateMap getEncoderRobotStateMap()
@@ -64,6 +70,7 @@ public class RobotStateEstimator implements Loop
         mDrive.setIMUHeading(pose.getRotation());
     }
 
+    @Override
     public void outputTelemetry()
     {
         final RobotStateMap.State estate = mEncoderStateMap.getLatestState();
@@ -82,22 +89,8 @@ public class RobotStateEstimator implements Loop
         mSLAMCamera.stop();
     }
 
-    @Override
-    public void run(boolean shouldReset)
+    public void run()
     {
-        if (shouldReset)
-        {
-            mLeftPrevDist = mDrive.getLeftDistanceInches();
-            mRightPrevDist = mDrive.getRightDistanceInches();
-
-            // Called from a different thread... We avoid data races because RobotSteteMap is thread-safe
-            mSLAMCamera.start((CameraUpdate update) ->
-            {
-                mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, update.velocity);
-            });
-            mSLAMCamera.setPose(Pose2d.identity());
-        }
-
         final RobotStateMap.State last = mEncoderStateMap.getLatestState();
         final Pose2d lastPose = last.pose;
 
@@ -149,7 +142,18 @@ public class RobotStateEstimator implements Loop
 
         /* record the new state estimate */
         mEncoderStateMap.addObservations(Timer.getFPGATimestamp(), nextP, iVal, pVal);
+    }
 
-        outputTelemetry();
+    public void reset()
+    {
+        mLeftPrevDist = mDrive.getLeftDistanceInches();
+        mRightPrevDist = mDrive.getRightDistanceInches();
+
+        // Called from a different thread... We avoid data races because RobotSteteMap is thread-safe
+        mSLAMCamera.start((CameraUpdate update) ->
+        {
+            mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, update.velocity);
+        });
+        mSLAMCamera.setPose(Pose2d.identity());
     }
 }
