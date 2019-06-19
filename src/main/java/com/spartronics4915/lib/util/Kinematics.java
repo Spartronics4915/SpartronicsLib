@@ -11,6 +11,8 @@ import com.spartronics4915.lib.math.geometry.Twist2d;
  */
 public class Kinematics
 {
+    // TODO: Deduplicate kinematics once we add in path following stuff
+
     private static final double kEpsilon = 1E-9;
 
     private final double mTrackWidthInches, mScrubFactor;

@@ -40,7 +40,7 @@ public final class StateMachineScheduler
     }
 
     /**
-     * This method calls persistient runnables and {@link CommandStateMachine#run()}
+     * This method calls {@link CommandStateMachine#run()}
      * and then calls {@link edu.wpi.first.wpilibj.command.Scheduler#run()
      * Scheduler.getInstance().run()}. Put this in your {@code teleopPeriodic} and
      * {@code autonomousPeriodic} methods.
