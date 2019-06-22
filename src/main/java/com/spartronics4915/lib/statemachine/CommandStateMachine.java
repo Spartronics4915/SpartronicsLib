@@ -107,5 +107,5 @@ abstract public class CommandStateMachine
      * Override this method and call {@link CommandStateMachine#addState()}, etc
      * here.
      */
-    abstract void setup();
+    protected abstract void setup();
 }
