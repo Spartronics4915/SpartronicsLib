@@ -66,7 +66,7 @@ constexpr auto odometryConfig = R"(
 }
 )";
 
-jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj, jstring mapPath)
+jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv *env, jobject thisObj, jstring mapPath)
 {
     try
     {
@@ -192,7 +192,7 @@ jlong Java_com_spartronics4915_lib_sensors_T265Camera_newCamera(JNIEnv *env, job
     return 0;
 }
 
-void Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw(JNIEnv *env, jobject thisObj, jint sensorId, jint frameNumber, jfloat xVel, jfloat yVel)
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JNIEnv *env, jobject thisObj, jint sensorId, jint frameNumber, jfloat xVel, jfloat yVel)
 {
     try
     {
@@ -212,7 +212,7 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_sendOdometryRaw(JNIEnv *env
     }
 }
 
-void Java_com_spartronics4915_lib_sensors_T265Camera_exportRelocalizationMap(JNIEnv *env, jobject thisObj, jstring savePath)
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_exportRelocalizationMap(JNIEnv *env, jobject thisObj, jstring savePath)
 {
     try
     {
@@ -282,7 +282,7 @@ void importRelocalizationMap(const char *path, rs2::pose_sensor *poseSensor)
     file.close();
 }
 
-void Java_com_spartronics4915_lib_sensors_T265Camera_setOdometryInfo(JNIEnv *env, jobject thisObj, jfloat xOffset, jfloat yOffset, jfloat angOffset, jfloat measureCovariance)
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_setOdometryInfo(JNIEnv *env, jobject thisObj, jfloat xOffset, jfloat yOffset, jfloat angOffset, jdouble measureCovariance)
 {
     try
     {
@@ -302,7 +302,7 @@ void Java_com_spartronics4915_lib_sensors_T265Camera_setOdometryInfo(JNIEnv *env
     }
 }
 
-void Java_com_spartronics4915_lib_sensors_T265Camera_free(JNIEnv *env, jobject thisObj)
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, jobject thisObj)
 {
     try
     {
@@ -344,7 +344,7 @@ void ensureCache(JNIEnv *env, jobject thisObj)
     }
     if (!exception)
     {
-        auto lException = env->FindClass("com/spartronics4915/lib/sensors/T265Camera$CameraJNIException");
+        auto lException = env->FindClass("com/spartronics4915/lib/hardware/sensors/T265Camera$CameraJNIException");
         exception = reinterpret_cast<jclass>(env->NewGlobalRef(lException));
     }
 }

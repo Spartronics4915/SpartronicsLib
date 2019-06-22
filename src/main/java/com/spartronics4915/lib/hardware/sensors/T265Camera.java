@@ -68,7 +68,7 @@ public class T265Camera
      * @param odometryCovariance Covariance of the odometry input when doing
      *                           sensor fusion (you probably want to tune this)
      */
-    public T265Camera(Pose2d cameraOffset, float odometryCovariance)
+    public T265Camera(Pose2d cameraOffset, double odometryCovariance)
     {
         this(cameraOffset, odometryCovariance, "");
     }
@@ -86,7 +86,7 @@ public class T265Camera
      * @param relocMapPath       path (including filename) to a relocalization map
      *                           to load
      */
-    public T265Camera(Pose2d cameraOffset, float odometryCovariance, String relocMapPath)
+    public T265Camera(Pose2d cameraOffset, double odometryCovariance, String relocMapPath)
     {
         mNativeCameraObjectPointer = newCamera(relocMapPath);
         setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
@@ -157,7 +157,7 @@ public class T265Camera
      */
     public native void free();
 
-    private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, float measurementCovariance);
+    private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, double measurementCovariance);
 
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
 
