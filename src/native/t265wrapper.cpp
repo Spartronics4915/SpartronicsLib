@@ -181,6 +181,8 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
         // Start streaming
         pipeline->start(config, consumerCallback);
 
+        std::cout << "T265 native wrapper fully started" << std::endl;
+
         return reinterpret_cast<jlong>(new deviceAndSensors(pipeline, odom, pose, globalThis));
     }
     catch (std::exception &e)

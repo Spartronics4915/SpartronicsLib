@@ -31,7 +31,7 @@ public class TestT265Camera
         T265Camera cam = null;
         try
         {
-            cam = new T265Camera(new Pose2d(), 0f);
+            cam = new T265Camera(new Pose2d(), 0);
 
             // Just make sure this doesn't throw
             cam.sendOdometry(0, 0, new Twist2d(0, 0, 0));

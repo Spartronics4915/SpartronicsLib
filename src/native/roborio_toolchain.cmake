@@ -20,6 +20,9 @@ set(CMAKE_OBJDUMP ${BinaryPrefix}-objdump)
 set(CMAKE_SIZE ${BinaryPrefix}-size)
 set(CMAKE_NM ${BinaryPrefix}-nm)
 
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -mfpu=neon -mfloat-abi=softfp -ftree-vectorize -fPIC -flto")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon -mfloat-abi=softfp -ftree-vectorize -fPIC -flto")
+
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)

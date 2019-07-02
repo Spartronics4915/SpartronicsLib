@@ -1,7 +1,6 @@
 package com.spartronics4915.lib.hardware.sensors;
 
 import java.nio.file.Paths;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.spartronics4915.lib.math.geometry.Pose2d;
