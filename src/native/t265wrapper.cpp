@@ -8,6 +8,7 @@
 #include <thread>
 #include <cstring>
 #include <mutex>
+#include <algorithm>
 
 // We use jlongs like pointers, so they better be large enough
 static_assert(sizeof(jlong) >= sizeof(void *));
@@ -144,7 +145,7 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
          * We define a callback that will run in another thread.
          * This is why we must take care to preserve a pointer to
          * a jvm object, which we attach to the currrent thread
-         * so we can get a valid environment object and call
+         * so we can get a valid environment object and call the
          * callback in Java. We also make a global reference to
          * the current object, which will be cleaned up when the
          * user calls free() from Java.
@@ -318,6 +319,10 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, 
         ensureCache(env, thisObj);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
+
+        std::lock_guard<std::mutex> lock(tbcMutex);
+        toBeCleaned.erase(
+            std::remove(toBeCleaned.begin(), toBeCleaned.end(), devAndSensors), toBeCleaned.end());
 
         env->DeleteGlobalRef(devAndSensors->globalThis);
         delete devAndSensors;
