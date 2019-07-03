@@ -318,12 +318,9 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, 
         ensureCache(env, thisObj);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
-        if (devAndSensors->isRunning)
-            devAndSensors->pipeline->stop();
+
         env->DeleteGlobalRef(devAndSensors->globalThis);
-
         delete devAndSensors;
-
         env->SetLongField(thisObj, fieldID, 0);
     }
     catch (std::exception &e)
@@ -337,6 +334,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *, 
     std::lock_guard<std::mutex> lock(tbcMutex);
     while (!toBeCleaned.empty())
     {
+        // We don't have to worry about deleteting the globalThises because java is shutting down anyway
         auto back = toBeCleaned.back();
         delete back;
 
