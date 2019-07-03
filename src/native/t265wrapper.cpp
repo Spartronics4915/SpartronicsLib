@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include <cstring>
+#include <mutex>
 
 // We use jlongs like pointers, so they better be large enough
 static_assert(sizeof(jlong) >= sizeof(void *));
@@ -19,6 +20,9 @@ constexpr auto exportRelocMapStopDelay = std::chrono::seconds(10);
 jclass holdingClass = nullptr; // This should always be T265Camera jclass
 jfieldID fieldID = nullptr;    // Field id for the field "nativeCameraObjectPointer"
 jclass exception = nullptr;    // This is "CameraJNIException"
+
+std::vector<deviceAndSensors *> toBeCleaned;
+std::mutex tbcMutex;
 
 // We do this so we don't have to fiddle with files
 // Most of the below fields are supposed to be "ignored"
@@ -181,9 +185,12 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
         // Start streaming
         pipeline->start(config, consumerCallback);
 
-        std::cout << "T265 native wrapper fully started" << std::endl;
+        devAndSensors = new deviceAndSensors(pipeline, odom, pose, globalThis);
 
-        return reinterpret_cast<jlong>(new deviceAndSensors(pipeline, odom, pose, globalThis));
+        std::lock_guard<std::mutex> lock(tbcMutex);
+        toBeCleaned.push_back(devAndSensors);
+
+        return reinterpret_cast<jlong>(devAndSensors);
     }
     catch (std::exception &e)
     {
@@ -323,6 +330,19 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, 
     {
         env->ThrowNew(exception, e.what());
     }
+}
+
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *, jclass)
+{
+    std::lock_guard<std::mutex> lock(tbcMutex);
+    while (!toBeCleaned.empty())
+    {
+        auto back = toBeCleaned.back();
+        delete back;
+
+        toBeCleaned.pop_back();
+    }
+    std::cout << "[SpartronicsLib] T265 native wrapper gracefully shut down" << std::endl;
 }
 
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj)

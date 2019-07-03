@@ -26,6 +26,13 @@ public class T265Camera
     {
         // FIXME: Use System.loadLibrary
         System.load(Paths.get(System.getProperty("user.home"), "libspartronicsnative.so").toAbsolutePath().toString());
+
+        // Cleanup is quite tricky for us, because the native code has no idea when Java
+        // will be done. This is why we can't use smart pointers in the native code.
+        // Even worse, trying to cleanup with atexit in the native code is too late and
+        // results in unfinished callbacks blocking. As a result a shutdown hook is our
+        // best option.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> T265Camera.cleanup()));
     }
 
     public static enum PoseConfidence
@@ -161,6 +168,8 @@ public class T265Camera
     private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
 
     private native long newCamera(String mapPath);
+
+    private static native void cleanup();
 
     private synchronized void consumePoseUpdate(float x, float y, float radians, float xVel, int confOrdinal)
     {

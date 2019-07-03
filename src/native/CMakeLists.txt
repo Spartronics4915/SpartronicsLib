@@ -15,8 +15,8 @@ else()
     include_directories("jni/")
 endif()
 
-# We only support C++ and above
-set(CMAKE_CXX_STANDARD 11)
+# We only support C++17 and above
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Add sources
