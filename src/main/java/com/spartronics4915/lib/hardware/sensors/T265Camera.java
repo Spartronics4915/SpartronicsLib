@@ -112,6 +112,8 @@ public class T265Camera
      */
     public synchronized void start(Consumer<CameraUpdate> poseConsumer)
     {
+        if (mIsStarted)
+            throw new RuntimeException("You can't start a T265 camera that is already started!");
         mPoseConsumer = poseConsumer;
         mIsStarted = true;
     }

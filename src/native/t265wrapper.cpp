@@ -100,7 +100,6 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
         auto device = profile.get_device();
         if (!device.is<rs2::tm2>())
         {
-            pipeline->stop();
             throw std::runtime_error("The device you have plugged in is not tracking-capable");
         }
 
@@ -116,9 +115,9 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                 odom = new rs2::wheel_odometer(sensor);
         }
         if (!odom)
-            throw new std::runtime_error("Selected device does not support wheel odometry inputs");
+            throw std::runtime_error("Selected device does not support wheel odometry inputs");
         if (!pose)
-            throw new std::runtime_error("Selected device does not have a pose sensor");
+            throw std::runtime_error("Selected device does not have a pose sensor");
 
         // Ensure that pipeline->start(...) chooses the devices we just got
         auto poseSerial = pose->get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
@@ -132,24 +131,21 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
             importRelocalizationMap(pathNativeStr, pose);
         env->ReleaseStringUTFChars(mapPath, pathNativeStr);
 
-        // Imagine writing a C++ wrapper but ignoring most C++ features
-        // Looking at you jni.h
-        // (See below for explanatory comment)
+        /*
+         * We define a callback that will run in another thread.
+         * This is why we must take care to preserve a pointer to
+         * a jvm object, which we attach to the other thread
+         * so we can get a valid environment object and call the
+         * callback in Java. We also make a global reference to
+         * the current object, which will be cleaned up when the
+         * user calls free() from Java.
+        */
         JavaVM *jvm;
         int error = env->GetJavaVM(&jvm);
         if (error)
             throw std::runtime_error("Couldn't get a JavaVM object from the current JNI environment");
         auto globalThis = env->NewGlobalRef(thisObj); // Must be cleaned up later
 
-        /*
-         * We define a callback that will run in another thread.
-         * This is why we must take care to preserve a pointer to
-         * a jvm object, which we attach to the currrent thread
-         * so we can get a valid environment object and call the
-         * callback in Java. We also make a global reference to
-         * the current object, which will be cleaned up when the
-         * user calls free() from Java.
-        */
         auto consumerCallback = [jvm, globalThis](const rs2::frame &frame) {
             JNIEnv *env = nullptr;
             try
@@ -323,9 +319,9 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, 
         std::lock_guard<std::mutex> lock(tbcMutex);
         toBeCleaned.erase(
             std::remove(toBeCleaned.begin(), toBeCleaned.end(), devAndSensors), toBeCleaned.end());
-
         env->DeleteGlobalRef(devAndSensors->globalThis);
         delete devAndSensors;
+
         env->SetLongField(thisObj, fieldID, 0);
     }
     catch (std::exception &e)
@@ -334,18 +330,32 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, 
     }
 }
 
-void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *, jclass)
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *env, jclass)
 {
-    std::lock_guard<std::mutex> lock(tbcMutex);
-    while (!toBeCleaned.empty())
+    try
     {
-        // We don't have to worry about deleteting the globalThises because java is shutting down anyway
-        auto back = toBeCleaned.back();
-        delete back;
+        std::lock_guard<std::mutex> lock(tbcMutex);
+        while (!toBeCleaned.empty())
+        {
+            auto back = toBeCleaned.back();
+            env->DeleteGlobalRef(back->globalThis);
+            delete back;
 
-        toBeCleaned.pop_back();
+            toBeCleaned.pop_back();
+        }
+        std::cout << "[SpartronicsLib] T265 native wrapper gracefully shut down" << std::endl;
     }
-    std::cout << "[SpartronicsLib] T265 native wrapper gracefully shut down" << std::endl;
+    catch (std::exception &e)
+    {
+        if (exception)
+        {
+            env->ThrowNew(exception, e.what());
+        }
+        else
+        {
+            std::cerr << e.what() << std::endl;
+        }
+    }
 }
 
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj)

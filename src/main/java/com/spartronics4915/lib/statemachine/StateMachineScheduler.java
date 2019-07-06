@@ -38,7 +38,7 @@ public final class StateMachineScheduler
      * Scheduler.getInstance().run()}. Put this in your {@code teleopPeriodic} and
      * {@code autonomousPeriodic} methods.
      */
-    public void run()
+    public void enableAndRun()
     {
         if (mHasBeenStopped)
             mScheduler.enable();
@@ -57,9 +57,10 @@ public final class StateMachineScheduler
      * 
      * Call this in your {@code disabledInit} methods.
      */
-    public void stop()
+    public void stopAndReset()
     {
         mScheduler.disable();
+        mScheduler.removeAll();
         mHasBeenStopped = true;
     }
 }

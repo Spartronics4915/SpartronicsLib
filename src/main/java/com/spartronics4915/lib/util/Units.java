@@ -3,52 +3,52 @@ package com.spartronics4915.lib.util;
 public class Units
 {
 
-    public static double rpm_to_rads_per_sec(double rpm)
+    public static double rpmToRadsPerSec(double rpm)
     {
         return rpm * 2.0 * Math.PI / 60.0;
     }
 
-    public static double rads_per_sec_to_rpm(double rads_per_sec)
+    public static double radsPerSecToRpm(double rads_per_sec)
     {
         return rads_per_sec * 60.0 / (2.0 * Math.PI);
     }
 
-    public static double inches_to_meters(double inches)
+    public static double inchesToMeters(double inches)
     {
         return inches * 0.0254;
     }
 
-    public static double millimeters_to_inches(double millimeters)
+    public static double millimetersToInches(double millimeters)
     {
-        return meters_to_inches(millimeters / 1000);
+        return metersToInches(millimeters / 1000);
     }
 
-    public static double inches_to_millimeters(double inches)
+    public static double inchesToMillimeters(double inches)
     {
-        return inches_to_meters(inches) * 1000;
+        return inchesToMeters(inches) * 1000;
     }
 
-    public static double meters_to_inches(double meters)
+    public static double metersToInches(double meters)
     {
         return meters / 0.0254;
     }
 
-    public static double feet_to_meters(double feet)
+    public static double feetToMeters(double feet)
     {
-        return inches_to_meters(feet * 12.0);
+        return inchesToMeters(feet * 12.0);
     }
 
-    public static double meters_to_feet(double meters)
+    public static double metersToFeet(double meters)
     {
-        return meters_to_inches(meters) / 12.0;
+        return metersToInches(meters) / 12.0;
     }
 
-    public static double degrees_to_radians(double degrees)
+    public static double degreesToRadians(double degrees)
     {
         return Math.toRadians(degrees);
     }
 
-    public static double radians_to_degrees(double radians)
+    public static double radiansToDegrees(double radians)
     {
         return Math.toDegrees(radians);
     }

@@ -1,5 +1,6 @@
 package com.spartronics4915.lib.subsystems.estimator;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -41,7 +42,7 @@ public class RobotStateEstimator extends Subsystem
         mKinematics = kinematics;
         mSLAMCamera = slamra;
 
-        reset();
+        resetRobotStateMaps();
 
         // Run this at 100 Hz
         new Notifier(this::run).startPeriodic(1 / 100.0);
@@ -67,6 +68,11 @@ public class RobotStateEstimator extends Subsystem
         double time = Timer.getFPGATimestamp();
         mEncoderStateMap.reset(time, pose);
         mCameraStateMap.reset(time, pose);
+
+        mLeftPrevDist = mDrive.getLeftDistanceInches();
+        mRightPrevDist = mDrive.getRightDistanceInches();
+
+        mSLAMCamera.setPose(Pose2d.identity());
         mDrive.setIMUHeading(pose.getRotation());
     }
 
@@ -91,6 +97,9 @@ public class RobotStateEstimator extends Subsystem
 
     public void run()
     {
+        if (DriverStation.getInstance().isDisabled())
+            return;
+
         final RobotStateMap.State last = mEncoderStateMap.getLatestState();
         final Pose2d lastPose = last.pose;
 
@@ -142,18 +151,17 @@ public class RobotStateEstimator extends Subsystem
 
         /* record the new state estimate */
         mEncoderStateMap.addObservations(Timer.getFPGATimestamp(), nextP, iVal, pVal);
+
+        mSLAMCamera.sendOdometry(0, 0, pVal);
     }
 
-    public void reset()
+    public void enable()
     {
-        mLeftPrevDist = mDrive.getLeftDistanceInches();
-        mRightPrevDist = mDrive.getRightDistanceInches();
-
-        // Called from a different thread... We avoid data races because RobotSteteMap is thread-safe
+        // Callback is called from a different thread... We avoid data races because RobotSteteMap is thread-safe
+        mSLAMCamera.stop();
         mSLAMCamera.start((CameraUpdate update) ->
         {
             mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, update.velocity);
         });
-        mSLAMCamera.setPose(Pose2d.identity());
     }
 }

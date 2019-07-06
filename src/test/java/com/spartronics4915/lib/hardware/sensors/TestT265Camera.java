@@ -1,5 +1,6 @@
 package com.spartronics4915.lib.hardware.sensors;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -67,6 +68,26 @@ public class TestT265Camera
             cam = new T265Camera(new Pose2d(), 0f, mapPath.toString());
 
             Logger.debug("Map imported without errors!");
+        }
+        finally
+        {
+            if (cam != null)
+                cam.free();
+        }
+    }
+
+    @Tag("hardwareDependant")
+    @Test
+    public void testErrorChecking()
+    {
+        T265Camera cam = null;
+        try
+        {
+            cam = new T265Camera(new Pose2d(), 0);
+            cam.start((CameraUpdate unused) -> {});
+
+            final T265Camera camTemp = cam;
+            assertThrows(RuntimeException.class, () -> camTemp.start((CameraUpdate unused) -> {}));
         }
         finally
         {

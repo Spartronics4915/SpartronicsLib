@@ -66,9 +66,9 @@ public:
 
   ~deviceAndSensors()
   {
-    delete wheelOdometrySensor;
-    delete poseSensor;
     delete pipeline;
+    delete poseSensor;
+    delete wheelOdometrySensor;
   }
 
   rs2::pipeline *pipeline;

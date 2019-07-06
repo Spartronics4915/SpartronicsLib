@@ -57,7 +57,7 @@ public class TestCommandStateMachine
             }
         };
         StateMachineScheduler.getInstance().setStateMachine(csm);
-        assertThrows(RuntimeException.class, () -> StateMachineScheduler.getInstance().run());
+        assertThrows(RuntimeException.class, () -> StateMachineScheduler.getInstance().enableAndRun());
     }
 
     @Test
@@ -107,7 +107,7 @@ public class TestCommandStateMachine
             /*
              * Don't use Timer.getFPGATimestamp here... It does something _weird_.
              */
-            StateMachineScheduler.getInstance().run();
+            StateMachineScheduler.getInstance().enableAndRun();
         }
 
         assertTrue(mHasCommandRun);
