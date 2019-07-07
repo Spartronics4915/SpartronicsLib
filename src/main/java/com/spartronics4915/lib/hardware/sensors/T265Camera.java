@@ -139,14 +139,13 @@ public class T265Camera
     /**
      * Sends robot velocity as computed from wheel encoders.
      * 
-     * @param sensorId    TODO: What is this
-     * @param frameNumber TODO: How to get this
-     * @param velocity    The robot's translational velocity
+     * @param sensorId    You can have multiple separate wheel sensors with different numbers
+     * @param velocity    The robot's translational velocity in meters/sec
      */
-    public void sendOdometry(int sensorId, int frameNumber, Twist2d velocity)
+    public void sendOdometry(int sensorId, Twist2d velocity)
     {
         Pose2d transVel = Pose2d.exp(velocity);
-        sendOdometryRaw(sensorId, frameNumber, (float) transVel.getTranslation().x(), (float) transVel.getTranslation().y());
+        sendOdometryRaw(sensorId, (float) transVel.getTranslation().x(), (float) transVel.getTranslation().y());
     }
 
     /**
@@ -167,7 +166,7 @@ public class T265Camera
 
     private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, double measurementCovariance);
 
-    private native void sendOdometryRaw(int sensorId, int frameNumber, float xVel, float yVel);
+    private native void sendOdometryRaw(int sensorId, float xVel, float yVel);
 
     private native long newCamera(String mapPath);
 

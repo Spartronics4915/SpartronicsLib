@@ -7,7 +7,6 @@
 #include <chrono>
 #include <thread>
 #include <cstring>
-#include <mutex>
 #include <algorithm>
 
 // We use jlongs like pointers, so they better be large enough
@@ -146,7 +145,9 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
             throw std::runtime_error("Couldn't get a JavaVM object from the current JNI environment");
         auto globalThis = env->NewGlobalRef(thisObj); // Must be cleaned up later
 
-        auto consumerCallback = [jvm, globalThis](const rs2::frame &frame) {
+        devAndSensors = new deviceAndSensors(pipeline, odom, pose, globalThis);
+
+        auto consumerCallback = [jvm, devAndSensors](const rs2::frame &frame) {
             JNIEnv *env = nullptr;
             try
             {
@@ -164,7 +165,10 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                 if (!callbackMethodID)
                     throw std::runtime_error("consumePoseUpdate method doesn't exist");
 
-                env->CallVoidMethod(globalThis, callbackMethodID, poseData.translation.x, poseData.translation.y, yaw, poseData.velocity.x, poseData.tracker_confidence);
+                env->CallVoidMethod(devAndSensors->globalThis, callbackMethodID, poseData.translation.x, poseData.translation.y, yaw, poseData.velocity.x, poseData.tracker_confidence);
+
+                std::lock_guard<std::mutex> lock(devAndSensors->frameNumMutex);
+                devAndSensors->lastRecvdFrameNum = frame.get_frame_number();
             }
             catch (std::exception &e)
             {
@@ -182,8 +186,6 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
         // Start streaming
         pipeline->start(config, consumerCallback);
 
-        devAndSensors = new deviceAndSensors(pipeline, odom, pose, globalThis);
-
         std::lock_guard<std::mutex> lock(tbcMutex);
         toBeCleaned.push_back(devAndSensors);
 
@@ -198,7 +200,7 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
     return 0;
 }
 
-void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JNIEnv *env, jobject thisObj, jint sensorId, jint frameNumber, jfloat xVel, jfloat yVel)
+void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JNIEnv *env, jobject thisObj, jint sensorId, jfloat xVel, jfloat yVel)
 {
     try
     {
@@ -207,10 +209,11 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JN
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         // jints are 32 bit and are signed so we have to be careful
         // jint shouldn't be able to be greater than UINT32_MAX, but we'll be defensive
-        if (sensorId > UINT8_MAX || frameNumber > UINT32_MAX || sensorId < 0 || frameNumber < 0)
-            env->ThrowNew(exception, "sensorId or frameNumber are out of range");
+        if (sensorId > UINT8_MAX || sensorId < 0)
+            env->ThrowNew(exception, "sensorId is out of range of a 32-bit unsigned integer (is it negative?)");
 
-        devAndSensors->wheelOdometrySensor->send_wheel_odometry(sensorId, frameNumber, rs2_vector{.x = xVel, .y = yVel, .z = 0.0});
+        std::lock_guard<std::mutex> lock(devAndSensors->frameNumMutex);
+        devAndSensors->wheelOdometrySensor->send_wheel_odometry(sensorId, devAndSensors->lastRecvdFrameNum, rs2_vector{.x = xVel, .y = yVel, .z = 0.0});
     }
     catch (std::exception &e)
     {

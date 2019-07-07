@@ -13,6 +13,7 @@ import com.spartronics4915.lib.hardware.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.subsystems.Subsystem;
 import com.spartronics4915.lib.subsystems.drive.AbstractDrive;
 import com.spartronics4915.lib.util.Kinematics;
+import com.spartronics4915.lib.util.Units;
 
 /**
  * This loop keeps track of robot state whenever the robot is enabled.
@@ -152,7 +153,8 @@ public class RobotStateEstimator extends Subsystem
         /* record the new state estimate */
         mEncoderStateMap.addObservations(Timer.getFPGATimestamp(), nextP, iVal, pVal);
 
-        mSLAMCamera.sendOdometry(0, 0, pVal);
+        Twist2d metricPVal = new Twist2d(Units.feetToMeters(pVal.dx), Units.feetToMeters(pVal.dy), pVal.dtheta);
+        mSLAMCamera.sendOdometry(0, metricPVal);
     }
 
     public void enable()

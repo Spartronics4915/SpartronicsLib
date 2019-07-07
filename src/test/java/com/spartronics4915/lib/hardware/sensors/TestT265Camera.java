@@ -35,7 +35,7 @@ public class TestT265Camera
             cam = new T265Camera(new Pose2d(), 0);
 
             // Just make sure this doesn't throw
-            cam.sendOdometry(0, 0, new Twist2d(0, 0, 0));
+            cam.sendOdometry(0, new Twist2d(0, 0, 0));
 
             cam.start((CameraUpdate update) ->
             {
@@ -46,7 +46,7 @@ public class TestT265Camera
                 System.out.println("Got pose with confidence " + update.pose);
             });
             Logger.debug(
-                    "Waiting 5 seconds to recieve data... Move the camera around in a cross pattern for best results. This will not work unless you get to High confidence.");
+                    "Waiting 5 seconds to recieve data... Move the camera around in the path of the shape of a cross for best results. This will not work unless you get to High confidence.");
             Thread.sleep(5000);
             cam.stop();
             synchronized (mLock)
