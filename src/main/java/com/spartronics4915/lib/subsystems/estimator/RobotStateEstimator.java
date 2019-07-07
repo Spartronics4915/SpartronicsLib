@@ -153,8 +153,14 @@ public class RobotStateEstimator extends Subsystem
         /* record the new state estimate */
         mEncoderStateMap.addObservations(Timer.getFPGATimestamp(), nextP, iVal, pVal);
 
-        Twist2d metricPVal = new Twist2d(Units.feetToMeters(pVal.dx), Units.feetToMeters(pVal.dy), pVal.dtheta);
-        mSLAMCamera.sendOdometry(0, metricPVal);
+        // We convert feet/loopinterval and radians/loopinterval to meters/sec and radians/sec
+        final double loopintervalToSeconds = 1 / (Timer.getFPGATimestamp() - last.timestamp);
+        final Twist2d metricIVal = new Twist2d(
+                Units.feetToMeters(iVal.dx) * loopintervalToSeconds,
+                Units.feetToMeters(iVal.dy) * loopintervalToSeconds,
+                iVal.dtheta * loopintervalToSeconds);
+
+        mSLAMCamera.sendOdometry(0, metricIVal);
     }
 
     public void enable()
@@ -164,10 +170,10 @@ public class RobotStateEstimator extends Subsystem
         mSLAMCamera.start((CameraUpdate update) ->
         {
             update = new CameraUpdate(
-                new Pose2d(Units.metersToFeet(update.pose.getTranslation().x()), Units.metersToFeet(update.pose.getTranslation().y()), update.pose.getRotation()),
-                new Twist2d(Units.metersToFeet(update.velocity.dx), Units.metersToFeet(update.velocity.dy), update.velocity.dtheta),
-                update.confidence
-            );
+                    new Pose2d(Units.metersToFeet(update.pose.getTranslation().x()), Units.metersToFeet(update.pose.getTranslation().y()),
+                            update.pose.getRotation()),
+                    new Twist2d(Units.metersToFeet(update.velocity.dx), Units.metersToFeet(update.velocity.dy), update.velocity.dtheta),
+                    update.confidence);
             mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, update.velocity);
         });
     }
