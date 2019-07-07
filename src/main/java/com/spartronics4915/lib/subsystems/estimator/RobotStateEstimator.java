@@ -163,6 +163,11 @@ public class RobotStateEstimator extends Subsystem
         mSLAMCamera.stop();
         mSLAMCamera.start((CameraUpdate update) ->
         {
+            update = new CameraUpdate(
+                new Pose2d(Units.metersToFeet(update.pose.getTranslation().x()), Units.metersToFeet(update.pose.getTranslation().y()), update.pose.getRotation()),
+                new Twist2d(Units.metersToFeet(update.velocity.dx), Units.metersToFeet(update.velocity.dy), update.velocity.dtheta),
+                update.confidence
+            );
             mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, update.velocity);
         });
     }

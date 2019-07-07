@@ -1,8 +1,5 @@
 package com.spartronics4915.lib.statemachine;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import edu.wpi.first.wpilibj.command.Scheduler;
 
 public final class StateMachineScheduler

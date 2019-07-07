@@ -45,7 +45,14 @@ public class T265Camera
 
     public static class CameraUpdate
     {
+
+        /**
+         * The robot's pose in meters.
+         */
         public final Pose2d pose;
+        /**
+         * The robot's velocity in meters/sec.
+         */
         public final Twist2d velocity;
         public final PoseConfidence confidence;
 
@@ -109,6 +116,9 @@ public class T265Camera
      * @param poseConsumer Called every time we recieve a pose from the
      *                     camera <i>from a different thread</i>! You must
      *                     synchronize memory access accross threads!
+     * 
+     *                     The poseConsumer recieves poses with translations in
+     *                     meters.
      */
     public synchronized void start(Consumer<CameraUpdate> poseConsumer)
     {
@@ -139,8 +149,9 @@ public class T265Camera
     /**
      * Sends robot velocity as computed from wheel encoders.
      * 
-     * @param sensorId    You can have multiple separate wheel sensors with different numbers
-     * @param velocity    The robot's translational velocity in meters/sec
+     * @param sensorId You can have multiple separate wheel sensors with different
+     *                 numbers
+     * @param velocity The robot's translational velocity in meters/sec
      */
     public void sendOdometry(int sensorId, Twist2d velocity)
     {
@@ -196,7 +207,8 @@ public class T265Camera
             default:
                 throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
-        mPoseConsumer.accept(new CameraUpdate(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset), new Twist2d(xVel, 0.0, 0.0), confidence));
+        mPoseConsumer.accept(new CameraUpdate(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset),
+                new Twist2d(xVel, 0.0, 0.0), confidence));
     }
 
     /**
