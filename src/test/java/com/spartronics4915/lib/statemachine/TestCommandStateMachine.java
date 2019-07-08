@@ -4,16 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.spartronics4915.lib.subsystems.Subsystem;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.command.Scheduler;
 
 public class TestCommandStateMachine
 {
+
     private class TestCommand extends Command
     {
 
@@ -41,16 +37,15 @@ public class TestCommandStateMachine
     private boolean mHasCommandRun = false;
     private boolean mHasLambdaRun = false;
 
-    public TestCommandStateMachine()
-    {
-    }
-    
     @Test
     public void testNoSetInitial()
     {
-        CommandStateMachine csm = new CommandStateMachine() {
+        CommandStateMachine csm = new CommandStateMachine()
+        {
+
             @Override
-            public void setup() {
+            public void setup()
+            {
                 State testCommandState = addState(new TestCommand());
                 // Note that setInitialState is _not_ called
                 // That means we should throw
@@ -63,9 +58,12 @@ public class TestCommandStateMachine
     @Test
     public void testBadStateCalls()
     {
-        new CommandStateMachine() {
+        new CommandStateMachine()
+        {
+
             @Override
-            public void setup() {
+            public void setup()
+            {
                 State testCommandState = addState(new TestCommand());
                 State someOtherState = addState();
                 setInitialState(testCommandState);
@@ -73,10 +71,10 @@ public class TestCommandStateMachine
                 // Can't do elapsedTime when we haven't run yet
                 assertThrows(RuntimeException.class, () -> testCommandState.elapsedTime());
                 assertThrows(RuntimeException.class, () -> testCommandState.isCommandFinished(Command.class)); // This command isn't held by this state, so this should throw
-                
+
                 assertDoesNotThrow(() -> testCommandState.whenAllFinished(someOtherState));
                 assertThrows(RuntimeException.class, () -> testCommandState.whenAnyFinished(someOtherState)); // Can't do whenAllFinished and whenAnyFinished
-                
+
                 testCommandState.whenAllFinished(null);
                 assertDoesNotThrow(() -> testCommandState.whenAnyFinished(someOtherState));
                 assertThrows(RuntimeException.class, () -> testCommandState.whenAllFinished(someOtherState)); // Can't do whenAllFinished and whenAnyFinished
@@ -87,9 +85,12 @@ public class TestCommandStateMachine
     @Test
     public void testScheduler() throws InterruptedException
     {
-        CommandStateMachine csm = new CommandStateMachine() {
+        CommandStateMachine csm = new CommandStateMachine()
+        {
+
             @Override
-            public void setup() {
+            public void setup()
+            {
                 State testCommandState = addState(new TestCommand());
                 testCommandState.addCode(() -> mHasLambdaRun = true);
                 testCommandState.addEntryCode(() -> mHasEntryCodeRun = true);

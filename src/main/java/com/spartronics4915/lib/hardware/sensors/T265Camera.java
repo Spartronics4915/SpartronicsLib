@@ -51,7 +51,7 @@ public class T265Camera
          */
         public final Pose2d pose;
         /**
-         * The robot's velocity in meters/sec.
+         * The robot's velocity in meters/sec and radians/sec.
          */
         public final Twist2d velocity;
         public final PoseConfidence confidence;
@@ -150,8 +150,8 @@ public class T265Camera
      * Sends robot velocity as computed from wheel encoders.
      * 
      * @param sensorId You can have multiple separate wheel sensors with different
-     *                 numbers
-     * @param velocity The robot's translational velocity in meters/sec
+     *                 numbers; set this to 0 if you don't care.
+     * @param velocity The robot's translational velocity in meters/sec.
      */
     public void sendOdometry(int sensorId, Twist2d velocity)
     {
@@ -183,7 +183,7 @@ public class T265Camera
 
     private static native void cleanup();
 
-    private synchronized void consumePoseUpdate(float x, float y, float radians, float xVel, int confOrdinal)
+    private synchronized void consumePoseUpdate(float x, float y, float radians, float dx, float dtheta, int confOrdinal)
     {
         if (!mIsStarted)
             return;
@@ -208,7 +208,7 @@ public class T265Camera
                 throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
         mPoseConsumer.accept(new CameraUpdate(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset),
-                new Twist2d(xVel, 0.0, 0.0), confidence));
+                new Twist2d(dx, 0.0, dtheta), confidence));
     }
 
     /**

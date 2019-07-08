@@ -24,6 +24,18 @@ jclass exception = nullptr;    // This is "CameraJNIException"
 std::vector<deviceAndSensors *> toBeCleaned;
 std::mutex tbcMutex;
 
+/*
+ * A note on coordinate systems:
+ * 
+ * Relative to the robot, the camera's Y is up and down, Z is forward and back, and X is side to side.
+ * 
+ * Conversions are:
+ *   Camera Z -> Robot X * -1
+ *   Camera X -> Robot Y * -1
+ * 
+ * For ease of use, all coodrinates that come out of this wrapper are in the "robot standard" coordinate system.
+ */
+
 // We do this so we don't have to fiddle with files
 // Most of the below fields are supposed to be "ignored"
 // See https://github.com/IntelRealSense/librealsense/blob/master/doc/t265.md#wheel-odometry-calibration-file-format
@@ -46,8 +58,8 @@ constexpr auto odometryConfig = R"(
             "extrinsics": {
                 "T": [
                     %f,
-                    %f,
-                    0.0
+                    0.0,
+                    %f
                 ],
                 "T_variance": [
                     9.999999974752427e-7, 
@@ -161,11 +173,12 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                 // rotation is a quaternion so we must convert to an euler angle (yaw)
                 auto yaw = atan2f(2.0 * (q.z * q.w + q.x * q.y), -1.0 + 2.0 * (q.w * q.w + q.x * q.x));
 
-                auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFFI)V");
+                auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFFFI)V");
                 if (!callbackMethodID)
                     throw std::runtime_error("consumePoseUpdate method doesn't exist");
 
-                env->CallVoidMethod(devAndSensors->globalThis, callbackMethodID, poseData.translation.x, poseData.translation.y, yaw, poseData.velocity.x, poseData.tracker_confidence);
+                auto velocityMagnitude = hypotf(-poseData.velocity.z, -poseData.velocity.x);
+                env->CallVoidMethod(devAndSensors->globalThis, callbackMethodID, -poseData.translation.z, -poseData.translation.x, yaw, velocityMagnitude, poseData.angular_velocity.y, poseData.tracker_confidence);
 
                 std::lock_guard<std::mutex> lock(devAndSensors->frameNumMutex);
                 devAndSensors->lastRecvdFrameNum = frame.get_frame_number();
@@ -213,7 +226,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JN
             env->ThrowNew(exception, "sensorId is out of range of a 32-bit unsigned integer (is it negative?)");
 
         std::lock_guard<std::mutex> lock(devAndSensors->frameNumMutex);
-        devAndSensors->wheelOdometrySensor->send_wheel_odometry(sensorId, devAndSensors->lastRecvdFrameNum, rs2_vector{.x = xVel, .y = yVel, .z = 0.0});
+        devAndSensors->wheelOdometrySensor->send_wheel_odometry(sensorId, devAndSensors->lastRecvdFrameNum, rs2_vector{.x = -yVel, .y = 0.0, .z = -xVel});
     }
     catch (std::exception &e)
     {
@@ -299,7 +312,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_setOdometryInfo(JN
 
         auto size = snprintf(nullptr, 0, odometryConfig, measureCovariance, xOffset, yOffset, angOffset);
         char buf[size];
-        snprintf(buf, size, odometryConfig, xOffset, yOffset, angOffset);
+        snprintf(buf, size, odometryConfig, -yOffset, -xOffset, angOffset);
         auto vecBuf = std::vector<uint8_t>(*buf, *buf + size);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
