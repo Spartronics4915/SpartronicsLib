@@ -5,6 +5,9 @@ plugins {
     id "maven-publish"
 }
 
+// Makes composite builds work
+project.group = 'com.github.Spartronics4915'
+
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
