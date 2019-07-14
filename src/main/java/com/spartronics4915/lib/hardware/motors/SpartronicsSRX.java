@@ -197,4 +197,9 @@ public class SpartronicsSRX implements SpartronicsMotor
         mTalonSRX.config_kF(kPositionSlotIdx, kF);
     }
 
+    public void follow(SpartronicsSRX other)
+    {
+        mTalonSRX.follow(other.mTalonSRX);
+    }
+
 }

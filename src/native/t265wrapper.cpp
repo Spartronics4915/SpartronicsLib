@@ -169,9 +169,8 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                     throw std::runtime_error("Couldn't attach callback thread to jvm");
 
                 auto poseData = frame.as<rs2::pose_frame>().get_pose_data();
-                auto q = poseData.rotation;
                 // rotation is a quaternion so we must convert to an euler angle (yaw)
-                auto yaw = atan2f(2.0 * (q.z * q.w + q.x * q.y), -1.0 + 2.0 * (q.w * q.w + q.x * q.x));
+                auto yaw = 2 * atan2f(poseData.rotation.y, poseData.rotation.w);
 
                 auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFFFI)V");
                 if (!callbackMethodID)
@@ -310,10 +309,15 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_setOdometryInfo(JN
     {
         ensureCache(env, thisObj);
 
-        auto size = snprintf(nullptr, 0, odometryConfig, measureCovariance, xOffset, yOffset, angOffset);
+        auto size = snprintf(nullptr, 0, odometryConfig, measureCovariance, -yOffset, -xOffset, angOffset);
         char buf[size];
-        snprintf(buf, size, odometryConfig, -yOffset, -xOffset, angOffset);
-        auto vecBuf = std::vector<uint8_t>(*buf, *buf + size);
+        snprintf(buf, size, odometryConfig, measureCovariance, - yOffset, -xOffset, angOffset);
+        auto vecBuf = std::vector<uint8_t>(buf, buf + size);
+        for (const auto ch : vecBuf)
+        {
+            std::cout << static_cast<char>(ch);
+        }
+        std::cout << std::endl;
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         devAndSensors->wheelOdometrySensor->load_wheel_odometery_config(vecBuf);

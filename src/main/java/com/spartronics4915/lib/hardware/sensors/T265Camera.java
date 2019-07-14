@@ -77,13 +77,14 @@ public class T265Camera
      * {@link T265Camera#free() free} when you're done with this class. The
      * garbage collector will not help you.
      * 
-     * @param cameraOffset       Offset of camera from center of robot
+     * @param robotOffset        Offset of the center of the robot from the center
+     *                           of the camera.
      * @param odometryCovariance Covariance of the odometry input when doing
-     *                           sensor fusion (you probably want to tune this)
+     *                           sensor fusion (you probably want to tune this).
      */
-    public T265Camera(Pose2d cameraOffset, double odometryCovariance)
+    public T265Camera(Pose2d robotOffset, double odometryCovariance)
     {
-        this(cameraOffset, odometryCovariance, "");
+        this(robotOffset, odometryCovariance, "");
     }
 
     /**
@@ -93,37 +94,39 @@ public class T265Camera
      * {@link T265Camera#free() free} when you're done with this class. The
      * garbage collector will not help you.
      * 
-     * @param cameraOffset       Offset of camera from center of robot
+     * @param robotOffset        Offset of the center of the robot from the center
+     *                           of the camera. Units are meters.
      * @param odometryCovariance Covariance of the odometry input when doing
      *                           sensor fusion (you probablywant to tune this)
      * @param relocMapPath       path (including filename) to a relocalization map
-     *                           to load
+     *                           to load.
      */
-    public T265Camera(Pose2d cameraOffset, double odometryCovariance, String relocMapPath)
+    public T265Camera(Pose2d robotOffset, double odometryCovariance, String relocMapPath)
     {
         mNativeCameraObjectPointer = newCamera(relocMapPath);
-        setOdometryInfo((float) cameraOffset.getTranslation().x(), (float) cameraOffset.getTranslation().y(),
-                (float) cameraOffset.getRotation().getDegrees(), odometryCovariance);
+        setOdometryInfo((float) robotOffset.getTranslation().x(), (float) robotOffset.getTranslation().y(),
+                (float) robotOffset.getRotation().getDegrees(), odometryCovariance);
     }
 
     /**
      * This allows the user-provided pose recieve callback to recieve data.
+     * This will also reset the camera's pose to (0, 0) at 0 degrees.
      * <p>
      * This will not restart the camera following exportRelocalizationMap. You will
      * have to call {@link T265Camera#free()} and make a new {@link T265Camera}.
      * This is related to what appears to be a bug in librealsense.
      * 
-     * @param poseConsumer Called every time we recieve a pose from the
-     *                     camera <i>from a different thread</i>! You must
-     *                     synchronize memory access accross threads!
-     * 
-     *                     The poseConsumer recieves poses with translations in
-     *                     meters.
+     * @param poseConsumer A method to be called every time we recieve a pose from
+     *                     <i>from a different thread</i>! You must synchronize
+     *                     memory access accross threads!
+     *                     <p>
+     *                     Recieved poses are in meters.
      */
     public synchronized void start(Consumer<CameraUpdate> poseConsumer)
     {
         if (mIsStarted)
-            throw new RuntimeException("You can't start a T265 camera that is already started!");
+            throw new RuntimeException("T265 camera is already started");
+        setPose(Pose2d.identity());
         mPoseConsumer = poseConsumer;
         mIsStarted = true;
     }
@@ -162,20 +165,21 @@ public class T265Camera
     /**
      * This zeroes the camera pose to the provided new pose.
      * 
-     * @param newPose The new pose the camera should be at.
+     * @param newPose The pose the camera should be zeroed to.
      */
     public synchronized void setPose(Pose2d newPose)
     {
-        mZeroingOffset = newPose.transformBy(mLastRecievedPose.inverse());
+        mZeroingOffset = newPose.transformBy(new Pose2d(mLastRecievedPose.getTranslation().inverse(), mLastRecievedPose.getRotation().inverse()));
     }
 
     /**
-     * This must be called when you're done with this class or you will get memory
-     * leaks.
+     * This will free the underlying native objects. You probably don't want to use
+     * this; on program shutdown the native code will gracefully stop and delete any
+     * remaining objects.
      */
     public native void free();
 
-    private native void setOdometryInfo(float camOffsetX, float camOffsetY, float camOffsetRads, double measurementCovariance);
+    private native void setOdometryInfo(float robotOffsetX, float robotOffsetY, float robotOffsetRads, double measurementCovariance);
 
     private native void sendOdometryRaw(int sensorId, float xVel, float yVel);
 
@@ -207,14 +211,20 @@ public class T265Camera
             default:
                 throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
         }
-        mPoseConsumer.accept(new CameraUpdate(new Pose2d(x, y, Rotation2d.fromRadians(radians)).transformBy(mZeroingOffset),
-                new Twist2d(dx, 0.0, dtheta), confidence));
+
+        final Pose2d currentPose = new Pose2d(x, y, Rotation2d.fromRadians(radians));
+        final Pose2d transformedPose =
+                new Pose2d(currentPose.getTranslation().translateBy(mZeroingOffset.getTranslation()).rotateBy(mZeroingOffset.getRotation()),
+                        currentPose.getRotation().rotateBy(mZeroingOffset.getRotation()));
+        mPoseConsumer.accept(new CameraUpdate(transformedPose, new Twist2d(dx, 0.0, dtheta), confidence));
+
+        mLastRecievedPose = currentPose;
     }
 
     /**
      * Thrown if something goes wrong in the native code
      */
-    public static class CameraJNIException extends Exception
+    public static class CameraJNIException extends RuntimeException
     {
 
         // This must be static _and_ have this constructor if you want it to be

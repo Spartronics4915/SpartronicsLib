@@ -144,6 +144,6 @@ public abstract class AbstractDrive extends Subsystem
     public void tankDrive(double leftPercent, double rightPercent)
     {
         mLeftMotor.setDutyCycle(leftPercent);
-        mRightMotor.setDutyCycle(leftPercent);
+        mRightMotor.setDutyCycle(rightPercent);
     }
 }
