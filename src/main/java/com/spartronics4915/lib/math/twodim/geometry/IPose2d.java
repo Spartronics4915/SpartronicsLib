@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.math.geometry;
+package com.spartronics4915.lib.math.twodim.geometry;
 
 public interface IPose2d<S> extends IRotation2d<S>, ITranslation2d<S>
 {

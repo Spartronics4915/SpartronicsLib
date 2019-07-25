@@ -1,6 +1,6 @@
 package com.spartronics4915.lib.subsystems.drive;
 
-import com.spartronics4915.lib.math.geometry.Rotation2d;
+import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
 import com.spartronics4915.lib.subsystems.Subsystem;
 
 public abstract class AbstractDrive extends Subsystem
@@ -75,12 +75,12 @@ public abstract class AbstractDrive extends Subsystem
 
     public double getLeftDistanceInches()
     {
-        return mLeftMotor.getEncoder().getPosition() / mNativeUnitsPerRotation;
+        return rotationsToInches(mLeftMotor.getEncoder().getPosition() / mNativeUnitsPerRotation);
     }
 
     public double getRightDistanceInches()
     {
-        return mRightMotor.getEncoder().getPosition() / mNativeUnitsPerRotation;
+        return rotationsToInches(mRightMotor.getEncoder().getPosition() / mNativeUnitsPerRotation);
     }
 
     public double getLeftVelocityInchesPerSec()

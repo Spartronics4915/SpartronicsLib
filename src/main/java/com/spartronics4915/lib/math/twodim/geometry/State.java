@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.math.geometry;
+package com.spartronics4915.lib.math.twodim.geometry;
 
 import com.spartronics4915.lib.util.CSVWritable;
 import com.spartronics4915.lib.util.Interpolable;

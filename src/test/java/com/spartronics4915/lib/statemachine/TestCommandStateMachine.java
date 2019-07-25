@@ -46,7 +46,7 @@ public class TestCommandStateMachine
             @Override
             public void setup()
             {
-                State testCommandState = addState(new TestCommand());
+                addState(new TestCommand());
                 // Note that setInitialState is _not_ called
                 // That means we should throw
             }

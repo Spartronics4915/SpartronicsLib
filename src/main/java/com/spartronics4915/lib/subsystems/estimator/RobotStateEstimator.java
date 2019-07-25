@@ -5,9 +5,9 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import com.spartronics4915.lib.math.geometry.Pose2d;
-import com.spartronics4915.lib.math.geometry.Rotation2d;
-import com.spartronics4915.lib.math.geometry.Twist2d;
+import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
+import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
+import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
 import com.spartronics4915.lib.hardware.sensors.T265Camera;
 import com.spartronics4915.lib.hardware.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.subsystems.Subsystem;
@@ -35,8 +35,6 @@ public class RobotStateEstimator extends Subsystem
     private double mLeftPrevDist = 0.0;
     private double mRightPrevDist = 0.0;
 
-    private static final Pose2d kZeroPose = Pose2d.identity();
-
     public RobotStateEstimator(AbstractDrive driveSubsystem, Kinematics kinematics, T265Camera slamra)
     {
         mDrive = driveSubsystem;
@@ -45,7 +43,7 @@ public class RobotStateEstimator extends Subsystem
 
         resetRobotStateMaps();
 
-        // Run this at 100 Hz
+        // Run this at 20 Hz
         new Notifier(this::run).startPeriodic(1 / 100.0);
     }
 
@@ -61,7 +59,7 @@ public class RobotStateEstimator extends Subsystem
 
     public void resetRobotStateMaps()
     {
-        resetRobotStateMaps(kZeroPose);
+        resetRobotStateMaps(Pose2d.identity());
     }
 
     public void resetRobotStateMaps(Pose2d pose)
@@ -74,7 +72,7 @@ public class RobotStateEstimator extends Subsystem
         mRightPrevDist = mDrive.getRightDistanceInches();
 
         mSLAMCamera.setPose(pose);
-        mDrive.setIMUHeading(pose.getRotation());
+        // mDrive.setIMUHeading(pose.getRotation());
     }
 
     @Override
@@ -109,7 +107,6 @@ public class RobotStateEstimator extends Subsystem
             return;
 
         final RobotStateMap.State last = mEncoderStateMap.getLatestState();
-        final Pose2d lastPose = last.pose;
 
         /*
          * There are two ways to measure current velocity:
@@ -132,7 +129,7 @@ public class RobotStateEstimator extends Subsystem
         mLeftPrevDist = leftDist;
         mRightPrevDist = rightDist;
         final Twist2d iVal = mKinematics.forwardKinematics(
-                lastPose.getRotation(),
+                last.pose.getRotation(),
                 leftDelta, rightDelta, heading);
 
         /*
@@ -166,9 +163,9 @@ public class RobotStateEstimator extends Subsystem
                 Units.inchesToMeters(iVal.dx) * loopintervalToSeconds,
                 Units.inchesToMeters(iVal.dy) * loopintervalToSeconds,
                 iVal.dtheta * loopintervalToSeconds);
-        SmartDashboard.putString("debug", Pose2d.exp(metricIVal).toString());
+        SmartDashboard.putString("RobotState/metricTransVel", Pose2d.exp(metricIVal).toString() + " (Sending)");
 
-        // mSLAMCamera.sendOdometry(0, metricIVal);
+        mSLAMCamera.sendOdometry(metricIVal);
     }
 
     public void enable()

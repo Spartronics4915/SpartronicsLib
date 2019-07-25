@@ -313,11 +313,6 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_setOdometryInfo(JN
         char buf[size];
         snprintf(buf, size, odometryConfig, measureCovariance, - yOffset, -xOffset, angOffset);
         auto vecBuf = std::vector<uint8_t>(buf, buf + size);
-        for (const auto ch : vecBuf)
-        {
-            std::cout << static_cast<char>(ch);
-        }
-        std::cout << std::endl;
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         devAndSensors->wheelOdometrySensor->load_wheel_odometery_config(vecBuf);

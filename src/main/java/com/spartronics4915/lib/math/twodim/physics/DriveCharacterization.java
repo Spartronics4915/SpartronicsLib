@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.math.physics;
+package com.spartronics4915.lib.math.twodim.physics;
 
 import com.spartronics4915.lib.math.PolynomialRegression;
 

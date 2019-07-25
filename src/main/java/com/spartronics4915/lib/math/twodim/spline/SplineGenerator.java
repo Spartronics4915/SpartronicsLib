@@ -1,6 +1,6 @@
-package com.spartronics4915.lib.math.spline;
+package com.spartronics4915.lib.math.twodim.spline;
 
-import com.spartronics4915.lib.math.geometry.*;
+import com.spartronics4915.lib.math.twodim.geometry.*;
 
 import java.util.ArrayList;
 import java.util.List;

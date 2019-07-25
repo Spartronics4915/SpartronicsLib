@@ -2,9 +2,6 @@ package com.spartronics4915.lib.subsystems;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.spartronics4915.lib.math.geometry.Pose2d;
-import com.spartronics4915.lib.math.geometry.Rotation2d;
-
 import org.junit.jupiter.api.Test;
 
 public class TestSubsystemManager

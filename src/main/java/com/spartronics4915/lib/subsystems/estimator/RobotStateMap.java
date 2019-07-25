@@ -1,7 +1,7 @@
 package com.spartronics4915.lib.subsystems.estimator;
 
-import com.spartronics4915.lib.math.geometry.Pose2d;
-import com.spartronics4915.lib.math.geometry.Twist2d;
+import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
+import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
 import com.spartronics4915.lib.util.Interpolable;
 import com.spartronics4915.lib.util.InterpolatingDouble;
 import com.spartronics4915.lib.util.InterpolatingTreeMap;

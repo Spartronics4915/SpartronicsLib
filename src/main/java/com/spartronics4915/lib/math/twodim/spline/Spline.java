@@ -1,9 +1,9 @@
-package com.spartronics4915.lib.math.spline;
+package com.spartronics4915.lib.math.twodim.spline;
 
-import com.spartronics4915.lib.math.geometry.Pose2d;
-import com.spartronics4915.lib.math.geometry.Pose2dWithCurvature;
-import com.spartronics4915.lib.math.geometry.Rotation2d;
-import com.spartronics4915.lib.math.geometry.Translation2d;
+import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
+import com.spartronics4915.lib.math.twodim.geometry.Pose2dWithCurvature;
+import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
+import com.spartronics4915.lib.math.twodim.geometry.Translation2d;
 
 public abstract class Spline
 {

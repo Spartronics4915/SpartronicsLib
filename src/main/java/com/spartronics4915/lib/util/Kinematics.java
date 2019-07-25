@@ -1,8 +1,8 @@
 package com.spartronics4915.lib.util;
 
-import com.spartronics4915.lib.math.geometry.Pose2d;
-import com.spartronics4915.lib.math.geometry.Rotation2d;
-import com.spartronics4915.lib.math.geometry.Twist2d;
+import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
+import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
+import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
 
 /**
  * Provides forward and inverse kinematics equations for the robot modeling the
