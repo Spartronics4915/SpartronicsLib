@@ -1,7 +1,7 @@
 package com.spartronics4915.lib.math.twodim.geometry;
 
 import com.spartronics4915.lib.util.Interpolable;
-import com.spartronics4915.lib.util.Util;
+import com.spartronics4915.lib.math.Util;
 
 import java.text.DecimalFormat;
 
@@ -15,13 +15,6 @@ import java.text.DecimalFormat;
  */
 public class Twist2d implements Interpolable<Twist2d>
 {
-
-    protected static final Twist2d kIdentity = new Twist2d(0.0, 0.0, 0.0);
-
-    public static final Twist2d identity()
-    {
-        return kIdentity;
-    }
 
     public final double dx;
     public final double dy;
@@ -69,6 +62,29 @@ public class Twist2d implements Interpolable<Twist2d>
     }
 
     /**
+     * Obtain a new Pose2d from a (constant curvature) velocity. See:
+     * https://github.com/strasdat/Sophus/blob/master/sophus/se2.hpp
+     * 
+     * See also ch 9 of:
+     * http://ingmec.ual.es/~jlblanco/papers/jlblanco2010geometry3D_techrep.pdf
+     */
+    public Pose2d exp() {
+        double sin_theta = Math.sin(this.dtheta);
+        double cos_theta = Math.cos(this.dtheta);
+        double s, c;
+        if (Math.abs(this.dtheta) < Util.kEpsilon) {
+            // small angle approximation
+            s = 1.0 - 1.0 / 6.0 * this.dtheta * this.dtheta;
+            c = .5 * this.dtheta;
+        } else {
+            s = sin_theta / this.dtheta;
+            c = (1.0 - cos_theta) / this.dtheta;
+        }
+        Translation2d xlate = new Translation2d(this.dx * s - this.dy * c, this.dx * c + this.dy * s);
+        return new Pose2d(xlate, new Rotation2d(cos_theta, sin_theta, false));
+    }
+
+    /**
      * for some applications interpolating a Twist2d may be fraught with peril. 
      * If you are trying to move from a Pose2d according to a Twist2d
      * consider using Pose2d.interpolate
@@ -77,7 +93,7 @@ public class Twist2d implements Interpolable<Twist2d>
     public Twist2d interpolate(final Twist2d other, double x)
     {
         if (x <= 0)
-            return new Twist2d(this);
+            return this;
         else if (x >= 1)
             return new Twist2d(other);
         final Twist2d t = new Twist2d(

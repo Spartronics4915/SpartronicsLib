@@ -72,8 +72,8 @@ public class T265Camera
     private long mNativeCameraObjectPointer = 0;
     private boolean mIsStarted = false;
     private Pose2d mRobotOffset;
-    private Pose2d mZeroingOffset = Pose2d.identity();
-    private Pose2d mLastRecievedPose = Pose2d.identity();
+    private Pose2d mZeroingOffset = new Pose2d();
+    private Pose2d mLastRecievedPose = new Pose2d();
     private Consumer<CameraUpdate> mPoseConsumer = null;
 
     /**
@@ -129,7 +129,7 @@ public class T265Camera
     {
         if (mIsStarted)
             throw new RuntimeException("T265 camera is already started");
-        setPose(Pose2d.identity());
+        setPose(new Pose2d());
         mPoseConsumer = poseConsumer;
         mIsStarted = true;
     }
@@ -159,7 +159,7 @@ public class T265Camera
      */
     public void sendOdometry(Twist2d velocity)
     {
-        Pose2d transVel = Pose2d.exp(velocity);
+        Pose2d transVel = velocity.exp();
         // Only 1 odometry sensor is supported for now (index 0)
         sendOdometryRaw(0, (float) transVel.getTranslation().x(), (float) transVel.getTranslation().y());
     }

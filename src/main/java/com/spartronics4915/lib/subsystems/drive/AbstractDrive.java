@@ -11,7 +11,7 @@ public abstract class AbstractDrive extends Subsystem
     protected final SpartronicsMotor mLeftMotor, mRightMotor;
     protected final SpartronicsIMU mIMU;
 
-    protected Rotation2d mIMUOffset = Rotation2d.identity();
+    protected Rotation2d mIMUOffset = new Rotation2d();
 
     private final double mWheelDiameterInches;
     private final double mNativeUnitsPerRotation;

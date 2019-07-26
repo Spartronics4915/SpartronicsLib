@@ -11,7 +11,7 @@ import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
  */
 public class Kinematics
 {
-    // TODO: Deduplicate kinematics once we add in path following stuff
+    // TODO: Deduplicate kinematics once we add in path following stuff (i.e. remove this file)
 
     private final double mTrackWidthInches, mScrubFactor;
 
@@ -33,10 +33,10 @@ public class Kinematics
     }
 
     public Twist2d forwardKinematics(double leftWheelDelta, double rightWheelDelta,
-            double delta_rotation_rads)
+            double deltaRotationRads)
     {
         final double dx = (leftWheelDelta + rightWheelDelta) / 2.0;
-        return new Twist2d(dx, 0.0, delta_rotation_rads);
+        return new Twist2d(dx, 0.0, deltaRotationRads);
     }
 
     public Twist2d forwardKinematics(Rotation2d prevHeading, double leftWheelDelta, double rightWheelDelta,
@@ -51,8 +51,8 @@ public class Kinematics
      * For convenience, integrate forward kinematics with a Twist2d and previous
      * rotation.
      */
-    public Pose2d integrateForwardKinematics(Pose2d currentPose, Twist2d forward_kinematics)
+    public Pose2d integrateForwardKinematics(Pose2d currentPose, Twist2d forwardKinematics)
     {
-        return currentPose.transformBy(Pose2d.exp(forward_kinematics));
+        return currentPose.transformBy(forwardKinematics.exp());
     }
 }

@@ -21,8 +21,8 @@ public class RobotStateMap
         public State()
         {
             this.pose = new Pose2d();
-            this.integrationVelocity = Twist2d.identity();
-            this.predictedVelocity = Twist2d.identity();
+            this.integrationVelocity = new Twist2d();
+            this.predictedVelocity = new Twist2d();
             this.timestamp = 0;
         }
 
@@ -45,8 +45,8 @@ public class RobotStateMap
         public State(Pose2d p, double ts)
         {
             this.pose = p;
-            this.integrationVelocity = Twist2d.identity();
-            this.predictedVelocity = Twist2d.identity();
+            this.integrationVelocity = new Twist2d();
+            this.predictedVelocity = new Twist2d();
             this.timestamp = ts;
         }
 

@@ -1,6 +1,7 @@
 package com.spartronics4915.lib.math.twodim.geometry;
 
-import com.spartronics4915.lib.util.Util;
+import com.spartronics4915.lib.util.Interpolable;
+import com.spartronics4915.lib.math.Util;
 
 import java.text.DecimalFormat;
 
@@ -8,41 +9,34 @@ import java.text.DecimalFormat;
  * A translation in a 2d coordinate frame. Translations are simply shifts in an
  * (x, y) plane.
  */
-public class Translation2d implements ITranslation2d<Translation2d>
+public class Translation2d implements Interpolable<Translation2d>
 {
 
-    protected static final Translation2d kIdentity = new Translation2d();
-
-    public static final Translation2d identity()
-    {
-        return kIdentity;
-    }
-
-    protected final double x_;
-    protected final double y_;
+    private final double mX;
+    private final double mY;
 
     public Translation2d()
     {
-        x_ = 0;
-        y_ = 0;
+        mX = 0;
+        mY = 0;
     }
 
     public Translation2d(double x, double y)
     {
-        x_ = x;
-        y_ = y;
+        mX = x;
+        mY = y;
     }
 
     public Translation2d(final Translation2d other)
     {
-        x_ = other.x_;
-        y_ = other.y_;
+        mX = other.mX;
+        mY = other.mY;
     }
 
     public Translation2d(final Translation2d start, final Translation2d end)
     {
-        x_ = end.x_ - start.x_;
-        y_ = end.y_ - start.y_;
+        mX = end.mX - start.mX;
+        mY = end.mY - start.mY;
     }
 
     /**
@@ -52,22 +46,22 @@ public class Translation2d implements ITranslation2d<Translation2d>
      */
     public double norm()
     {
-        return Math.hypot(x_, y_);
+        return Math.hypot(mX, mY);
     }
 
     public double norm2()
     {
-        return x_ * x_ + y_ * y_;
+        return mX * mX + mY * mY;
     }
 
     public double x()
     {
-        return x_;
+        return mX;
     }
 
     public double y()
     {
-        return y_;
+        return mY;
     }
 
     /**
@@ -78,7 +72,7 @@ public class Translation2d implements ITranslation2d<Translation2d>
      */
     public Translation2d translateBy(final Translation2d other)
     {
-        return new Translation2d(x_ + other.x_, y_ + other.y_);
+        return new Translation2d(mX + other.mX, mY + other.mY);
     }
 
     /**
@@ -90,12 +84,12 @@ public class Translation2d implements ITranslation2d<Translation2d>
      */
     public Translation2d rotateBy(final Rotation2d rotation)
     {
-        return new Translation2d(x_ * rotation.cos() - y_ * rotation.sin(), x_ * rotation.sin() + y_ * rotation.cos());
+        return new Translation2d(mX * rotation.cos() - mY * rotation.sin(), mX * rotation.sin() + mY * rotation.cos());
     }
 
     public Rotation2d direction()
     {
-        return new Rotation2d(x_, y_, true);
+        return new Rotation2d(mX, mY, true);
     }
 
     /**
@@ -105,7 +99,7 @@ public class Translation2d implements ITranslation2d<Translation2d>
      */
     public Translation2d inverse()
     {
-        return new Translation2d(-x_, -y_);
+        return new Translation2d(-mX, -mY);
     }
 
     @Override
@@ -124,12 +118,12 @@ public class Translation2d implements ITranslation2d<Translation2d>
 
     public Translation2d extrapolate(final Translation2d other, double x)
     {
-        return new Translation2d(x * (other.x_ - x_) + x_, x * (other.y_ - y_) + y_);
+        return new Translation2d(x * (other.mX - mX) + mX, x * (other.mY - mY) + mY);
     }
 
     public Translation2d scale(double s)
     {
-        return new Translation2d(x_ * s, y_ * s);
+        return new Translation2d(mX * s, mY * s);
     }
 
     public boolean epsilonEquals(final Translation2d other, double epsilon)
@@ -141,19 +135,12 @@ public class Translation2d implements ITranslation2d<Translation2d>
     public String toString()
     {
         final DecimalFormat fmt = new DecimalFormat("#0.000");
-        return "(" + fmt.format(x_) + "," + fmt.format(y_) + ")";
-    }
-
-    @Override
-    public String toCSV()
-    {
-        final DecimalFormat fmt = new DecimalFormat("#0.000");
-        return fmt.format(x_) + "," + fmt.format(y_);
+        return "(" + fmt.format(mX) + "," + fmt.format(mY) + ")";
     }
 
     public static double dot(final Translation2d a, final Translation2d b)
     {
-        return a.x_ * b.x_ + a.y_ * b.y_;
+        return a.mX * b.mX + a.mY * b.mY;
     }
 
     public static Rotation2d getAngle(final Translation2d a, final Translation2d b)
@@ -168,10 +155,9 @@ public class Translation2d implements ITranslation2d<Translation2d>
 
     public static double cross(final Translation2d a, final Translation2d b)
     {
-        return a.x_ * b.y_ - a.y_ * b.x_;
+        return a.mX * b.mY - a.mY * b.mX;
     }
 
-    @Override
     public double distance(final Translation2d other)
     {
         return inverse().translateBy(other).norm();
@@ -185,7 +171,6 @@ public class Translation2d implements ITranslation2d<Translation2d>
         return distance((Translation2d) other) < Util.kEpsilon;
     }
 
-    @Override
     public Translation2d getTranslation()
     {
         return this;

@@ -3,7 +3,7 @@ package com.spartronics4915.lib.math.twodim.physics;
 import com.spartronics4915.lib.math.PolynomialRegression;
 
 import com.spartronics4915.lib.util.Logger;
-import com.spartronics4915.lib.util.Util;
+import com.spartronics4915.lib.math.Util;
 
 import java.util.List;
 
@@ -49,17 +49,17 @@ public class DriveCharacterization
     public static class CurvatureDataPoint
     {
 
-        public final double linear_velocity;
-        public final double angular_velocity;
-        public final double left_voltage;
-        public final double right_voltage;
+        public final double linearVelocity;
+        public final double angularVelocity;
+        public final double leftVoltage;
+        public final double rightVoltage;
 
-        public CurvatureDataPoint(double linear_velocity, double angular_velocity, double left_voltage, double right_voltage)
+        public CurvatureDataPoint(double linearVelocity, double angularVelocity, double leftVoltage, double rightVoltage)
         {
-            this.linear_velocity = linear_velocity;
-            this.angular_velocity = angular_velocity;
-            this.left_voltage = left_voltage;
-            this.right_voltage = right_voltage;
+            this.linearVelocity = linearVelocity;
+            this.angularVelocity = angularVelocity;
+            this.leftVoltage = leftVoltage;
+            this.rightVoltage = rightVoltage;
         }
     }
 

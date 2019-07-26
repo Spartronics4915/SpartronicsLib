@@ -1,27 +1,17 @@
 package com.spartronics4915.lib.math.twodim.geometry;
 
-import com.spartronics4915.lib.util.Util;
+import com.spartronics4915.lib.util.Interpolable;
+import com.spartronics4915.lib.math.Util;
 
 /**
  * Represents a 2d pose (rigid transform) containing translational and
  * rotational elements.
- * <p>
- * Inspired by Sophus (https://github.com/strasdat/Sophus/tree/master/sophus)
  */
-public class Pose2d implements IPose2d<Pose2d>
+public class Pose2d implements Interpolable<Pose2d>
 {
 
-    protected static final Pose2d kIdentity = new Pose2d();
-
-    public static final Pose2d identity()
-    {
-        return kIdentity;
-    }
-
-    private final static double kEps = 1E-9;
-
-    protected final Translation2d mTranslation;
-    protected final Rotation2d mRotation;
+    private final Translation2d mTranslation;
+    private final Rotation2d mRotation;
 
     public Pose2d()
     {
@@ -58,63 +48,32 @@ public class Pose2d implements IPose2d<Pose2d>
     }
 
     /**
-     * Obtain a new Pose2d from a (constant curvature) velocity. See:
-     * https://github.com/strasdat/Sophus/blob/master/sophus/se2.hpp
-     * 
-     * See also ch 9 of:
-     * http://ingmec.ual.es/~jlblanco/papers/jlblanco2010geometry3D_techrep.pdf
-     */
-    public static Pose2d exp(final Twist2d delta)
-    {
-        double sin_theta = Math.sin(delta.dtheta);
-        double cos_theta = Math.cos(delta.dtheta);
-        double s, c;
-        if (Math.abs(delta.dtheta) < kEps)
-        {
-            // small angle approximation
-            s = 1.0 - 1.0 / 6.0 * delta.dtheta * delta.dtheta;
-            c = .5 * delta.dtheta;
-        }
-        else
-        {
-            s = sin_theta / delta.dtheta;
-            c = (1.0 - cos_theta) / delta.dtheta;
-        }
-        Translation2d xlate = new Translation2d(delta.dx * s - delta.dy * c, 
-                                                delta.dx * c + delta.dy * s);
-        return new Pose2d(xlate,
-                new Rotation2d(cos_theta, sin_theta, false));
-    }
-
-    /**
      * Logical inverse of the above: obtains a Twist2d from a delta-pose
      */
-    public static Twist2d log(final Pose2d dPose)
+    public Twist2d log()
     {
-        final double dtheta = dPose.getRotation().getRadians();
-        final double half_dtheta = 0.5 * dtheta;
-        final double cos_minus_one = dPose.getRotation().cos() - 1.0;
+        final double dtheta = getRotation().getRadians();
+        final double halfDtheta = 0.5 * dtheta;
+        final double cosMinusOne = getRotation().cos() - 1.0;
         double halfCos; // halftheta_by_tan_of_halfdtheta;
-        if (Math.abs(cos_minus_one) < kEps)
+        if (Math.abs(cosMinusOne) < Util.kEpsilon)
         {
             halfCos = 1.0 - 1.0 / 12.0 * dtheta * dtheta;
         }
         else
         {
-            halfCos = -(half_dtheta * dPose.getRotation().sin()) / cos_minus_one;
+            halfCos = -(halfDtheta * getRotation().sin()) / cosMinusOne;
         }
-        final Translation2d transPart = dPose.getTranslation()
-                .rotateBy(new Rotation2d(halfCos, -half_dtheta, false));
+        final Translation2d transPart = getTranslation()
+                .rotateBy(new Rotation2d(halfCos, -halfDtheta, false));
         return new Twist2d(transPart.x(), transPart.y(), dtheta);
     }
 
-    @Override
     public Translation2d getTranslation()
     {
         return mTranslation;
     }
 
-    @Override
     public Rotation2d getRotation()
     {
         return mRotation;
@@ -128,7 +87,6 @@ public class Pose2d implements IPose2d<Pose2d>
      * @param other The other transform.
      * @return This transform * other
      */
-    @Override
     public Pose2d transformBy(final Pose2d other)
     {
         return new Pose2d(mTranslation.translateBy(other.mTranslation.rotateBy(mRotation)),
@@ -171,36 +129,13 @@ public class Pose2d implements IPose2d<Pose2d>
     }
 
     /**
-     * Finds the point where the heading of this pose intersects the heading of
-     * another. Returns (+INF, +INF) if
-     * parallel.
-     */
-    public Translation2d intersection(final Pose2d other)
-    {
-        final Rotation2d other_rotation = other.getRotation();
-        if (mRotation.isParallel(other_rotation))
-        {
-            // Lines are parallel.
-            return new Translation2d(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-        }
-        if (Math.abs(mRotation.cos()) < Math.abs(other_rotation.cos()))
-        {
-            return intersectionInternal(this, other);
-        }
-        else
-        {
-            return intersectionInternal(other, this);
-        }
-    }
-
-    /**
      * Return true if this pose is (nearly) colinear with the another.
      */
     public boolean isColinear(final Pose2d other)
     {
         if (!getRotation().isParallel(other.getRotation()))
             return false;
-        final Twist2d twist = log(inverse().transformBy(other));
+        final Twist2d twist = inverse().transformBy(other).log();
         return (Util.epsilonEquals(twist.dy, 0.0) && Util.epsilonEquals(twist.dtheta, 0.0));
     }
 
@@ -208,23 +143,6 @@ public class Pose2d implements IPose2d<Pose2d>
     {
         return getTranslation().epsilonEquals(other.getTranslation(), epsilon)
                 && getRotation().isParallel(other.getRotation());
-    }
-
-    private static Translation2d intersectionInternal(final Pose2d a, final Pose2d b)
-    {
-        final Rotation2d a_r = a.getRotation();
-        final Rotation2d b_r = b.getRotation();
-        final Translation2d a_t = a.getTranslation();
-        final Translation2d b_t = b.getTranslation();
-
-        final double tan_b = b_r.tan();
-        final double t = ((a_t.x() - b_t.x()) * tan_b + b_t.y() - a_t.y())
-                / (a_r.sin() - a_r.cos() * tan_b);
-        if (Double.isNaN(t))
-        {
-            return new Translation2d(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-        }
-        return a_t.translateBy(a_r.toTranslation().scale(t));
     }
 
     /**
@@ -241,8 +159,8 @@ public class Pose2d implements IPose2d<Pose2d>
         {
             return new Pose2d(other);
         }
-        final Twist2d twist = Pose2d.log(inverse().transformBy(other));
-        return transformBy(Pose2d.exp(twist.scaled(x)));
+        final Twist2d twist = inverse().transformBy(other).log();
+        return transformBy(twist.scaled(x).exp());
     }
 
     @Override
@@ -251,16 +169,9 @@ public class Pose2d implements IPose2d<Pose2d>
         return "T:" + mTranslation.toString() + ", R:" + mRotation.toString();
     }
 
-    @Override
-    public String toCSV()
-    {
-        return mTranslation.toCSV() + "," + mRotation.toCSV();
-    }
-
-    @Override
     public double distance(final Pose2d other)
     {
-        return Pose2d.log(inverse().transformBy(other)).norm();
+        return inverse().transformBy(other).log().norm();
     }
 
     @Override
@@ -271,13 +182,11 @@ public class Pose2d implements IPose2d<Pose2d>
         return epsilonEquals((Pose2d) other, Util.kEpsilon);
     }
 
-    @Override
     public Pose2d getPose()
     {
         return this;
     }
 
-    @Override
     public Pose2d mirror()
     {
         return new Pose2d(new Translation2d(getTranslation().x(), -getTranslation().y()), getRotation().inverse());

@@ -59,7 +59,7 @@ public class RobotStateEstimator extends Subsystem
 
     public void resetRobotStateMaps()
     {
-        resetRobotStateMaps(Pose2d.identity());
+        resetRobotStateMaps(new Pose2d());
     }
 
     public void resetRobotStateMaps(Pose2d pose)
@@ -163,7 +163,6 @@ public class RobotStateEstimator extends Subsystem
                 Units.inchesToMeters(iVal.dx) * loopintervalToSeconds,
                 Units.inchesToMeters(iVal.dy) * loopintervalToSeconds,
                 iVal.dtheta * loopintervalToSeconds);
-        SmartDashboard.putString("RobotState/metricTransVel", Pose2d.exp(metricIVal).toString() + " (Sending)");
 
         mSLAMCamera.sendOdometry(metricIVal);
     }
@@ -179,7 +178,7 @@ public class RobotStateEstimator extends Subsystem
                             update.pose.getRotation()),
                     new Twist2d(Units.metersToInches(update.velocity.dx), Units.metersToInches(update.velocity.dy), update.velocity.dtheta),
                     update.confidence);
-            mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, Twist2d.identity());
+            mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, new Twist2d());
             SmartDashboard.putString("RobotState/cameraConfidence", update.confidence.toString());
         });
     }

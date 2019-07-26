@@ -17,9 +17,9 @@ import java.util.UUID;
 public class Logger
 {
 
-    private static final UUID RUN_INSTANCE_UUID = UUID.randomUUID();
+    private static final UUID sRunInstanceUUID = UUID.randomUUID();
     public static int sVerbosity = 2; // 0: notices and above,  1: info and above, 2: all
-    private static final DateFormat s_dateFormat = new SimpleDateFormat("hh:mm:ss");
+    private static final DateFormat sDateFormat = new SimpleDateFormat("hh:mm:ss");
 
     public static void setVerbosity(String nm)
     {
@@ -120,7 +120,7 @@ public class Logger
     private static String getTimeStamp()
     {
         Date now = new Date();
-        String nowstr = s_dateFormat.format(now) + " ";
+        String nowstr = sDateFormat.format(now) + " ";
         return nowstr;
     }
 
@@ -141,7 +141,7 @@ public class Logger
             nullableException.printStackTrace();
         try (PrintWriter writer = new PrintWriter(new FileWriter(Paths.get(System.getProperty("user.home"), "crash_tracking.txt").toString(), true)))
         {
-            writer.print(RUN_INSTANCE_UUID.toString());
+            writer.print(sRunInstanceUUID.toString());
             writer.print(", ");
             writer.print(mark);
             if (nullableException != null)

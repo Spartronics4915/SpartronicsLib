@@ -8,9 +8,9 @@ public class Units
         return rpm * 2.0 * Math.PI / 60.0;
     }
 
-    public static double radsPerSecToRpm(double rads_per_sec)
+    public static double radsPerSecToRpm(double radsPerSec)
     {
-        return rads_per_sec * 60.0 / (2.0 * Math.PI);
+        return radsPerSec * 60.0 / (2.0 * Math.PI);
     }
 
     public static double inchesToMeters(double inches)

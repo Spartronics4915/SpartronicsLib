@@ -70,6 +70,7 @@ public class SplineGenerator
     }
 
     // We have to use AtomicInteger because int and Integar are pass-by-value
+    // We do a depth count because this can crash your robot with a stack overflow if you attempt to parameterize an invalid spline (Java doesn't do tail call optimization)
     private static void getSegmentArc(Spline s, AtomicInteger depthCount, List<Pose2dWithCurvature> rv, double t0, double t1, double maxDx,
             double maxDy,
             double maxDTheta)
@@ -79,7 +80,7 @@ public class SplineGenerator
         Rotation2d r0 = s.getHeading(t0);
         Rotation2d r1 = s.getHeading(t1);
         Pose2d transformation = new Pose2d(new Translation2d(p0, p1).rotateBy(r0.inverse()), r1.rotateBy(r0.inverse()));
-        Twist2d twist = Pose2d.log(transformation);
+        Twist2d twist = transformation.log();
 
         if (Math.abs(twist.dy) > maxDy || Math.abs(twist.dx) > maxDx || Math.abs(twist.dtheta) > maxDTheta)
         {
