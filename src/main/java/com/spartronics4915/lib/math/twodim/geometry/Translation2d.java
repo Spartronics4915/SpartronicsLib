@@ -103,17 +103,17 @@ public class Translation2d implements Interpolable<Translation2d>
     }
 
     @Override
-    public Translation2d interpolate(final Translation2d other, double x)
+    public Translation2d interpolate(final Translation2d endValue, double t)
     {
-        if (x <= 0)
+        if (t <= 0)
         {
             return new Translation2d(this);
         }
-        else if (x >= 1)
+        else if (t >= 1)
         {
-            return new Translation2d(other);
+            return new Translation2d(endValue);
         }
-        return extrapolate(other, x);
+        return extrapolate(endValue, t);
     }
 
     public Translation2d extrapolate(final Translation2d other, double x)
@@ -158,6 +158,9 @@ public class Translation2d implements Interpolable<Translation2d>
         return a.mX * b.mY - a.mY * b.mX;
     }
 
+    // This class could implement TrajectoryState because it has a distance
+    // method, but you would never use a Translation2d as a TrajectoryState.
+    // The above applies to Rotation2d and Twist2d as well.
     public double distance(final Translation2d other)
     {
         return inverse().translateBy(other).norm();

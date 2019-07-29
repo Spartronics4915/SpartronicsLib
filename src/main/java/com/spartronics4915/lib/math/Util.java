@@ -27,10 +27,10 @@ public class Util
         return Math.min(max, Math.max(min, v));
     }
 
-    public static double interpolate(double a, double b, double x)
+    public static double interpolate(double startValue, double endValue, double t)
     {
-        x = limit(x, 0.0, 1.0);
-        return a + (b - a) * x;
+        t = limit(t, 0.0, 1.0);
+        return startValue + (endValue - startValue) * t;
     }
 
     public static boolean epsilonEquals(double a, double b, double epsilon)

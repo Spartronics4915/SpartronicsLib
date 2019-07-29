@@ -19,9 +19,9 @@ public interface Interpolable<T>
      * < x < 1, the return value should be
      * interpolated proportionally between the two.
      *
-     * @param other The value of the upper bound
+     * @param endValue The value of the upper bound
      * @param x     The requested value. Should be between 0 and 1.
      * @return Interpolable<T> The estimated average between the surrounding data
      */
-    public T interpolate(T other, double x);
+    public T interpolate(T endValue, double x);
 }

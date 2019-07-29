@@ -107,6 +107,8 @@ public class RobotStateMap
         // do we care about dy here? 
         //  no: if velocity is in robot coords (no transverse motion expected)
         //  yes: if velocity is in field coords
+
+        // The answer to both questions is no, btw.
     }
 
     /**

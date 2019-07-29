@@ -142,18 +142,18 @@ public class Rotation2d implements Interpolable<Rotation2d>
     }
 
     @Override
-    public Rotation2d interpolate(final Rotation2d other, double x)
+    public Rotation2d interpolate(final Rotation2d endValue, double t)
     {
-        if (x <= 0)
+        if (t <= 0)
         {
             return new Rotation2d(this);
         }
-        else if (x >= 1)
+        else if (t >= 1)
         {
-            return new Rotation2d(other);
+            return new Rotation2d(endValue);
         }
-        double angleDiff = inverse().rotateBy(other).getRadians();
-        return this.rotateBy(Rotation2d.fromRadians(angleDiff * x));
+        double angleDiff = inverse().rotateBy(endValue).getRadians();
+        return this.rotateBy(Rotation2d.fromRadians(angleDiff * t));
     }
 
     @Override

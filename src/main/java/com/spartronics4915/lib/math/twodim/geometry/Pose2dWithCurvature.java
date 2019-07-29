@@ -1,11 +1,11 @@
 package com.spartronics4915.lib.math.twodim.geometry;
 
-import com.spartronics4915.lib.util.Interpolable;
 import com.spartronics4915.lib.math.Util;
+import com.spartronics4915.lib.math.twodim.trajectory.types.State;
 
 import java.text.DecimalFormat;
 
-public class Pose2dWithCurvature implements Interpolable<Pose2dWithCurvature>
+public class Pose2dWithCurvature implements State<Pose2dWithCurvature>
 {
 
     private final Pose2d mPose;
@@ -83,13 +83,14 @@ public class Pose2dWithCurvature implements Interpolable<Pose2dWithCurvature>
     }
 
     @Override
-    public Pose2dWithCurvature interpolate(final Pose2dWithCurvature other, double x)
+    public Pose2dWithCurvature interpolate(final Pose2dWithCurvature endValue, double t)
     {
-        return new Pose2dWithCurvature(getPose().interpolate(other.getPose(), x),
-                Util.interpolate(getCurvature(), other.getCurvature(), x),
-                Util.interpolate(getDCurvatureDs(), other.getDCurvatureDs(), x));
+        return new Pose2dWithCurvature(getPose().interpolate(endValue.getPose(), t),
+                Util.interpolate(getCurvature(), endValue.getCurvature(), t),
+                Util.interpolate(getDCurvatureDs(), endValue.getDCurvatureDs(), t));
     }
 
+    @Override
     public double distance(final Pose2dWithCurvature other)
     {
         return getPose().distance(other.getPose());

@@ -142,9 +142,9 @@ public class DifferentialDrive
     public void solveForwardDynamics(DriveDynamics dynamics)
     {
         final boolean leftStationary =
-                Util.epsilonEquals(dynamics.wheelVelocity.left, 0.0) && Math.abs(dynamics.voltage.left) < mLeftTransmission.friction_voltage();
+                Util.epsilonEquals(dynamics.wheelVelocity.left, 0.0) && Math.abs(dynamics.voltage.left) < mLeftTransmission.frictionVoltage();
         final boolean rightStationary =
-                Util.epsilonEquals(dynamics.wheelVelocity.right, 0.0) && Math.abs(dynamics.voltage.right) < mRightTransmission.friction_voltage();
+                Util.epsilonEquals(dynamics.wheelVelocity.right, 0.0) && Math.abs(dynamics.voltage.right) < mRightTransmission.frictionVoltage();
         if (leftStationary && rightStationary)
         {
             // Neither side breaks static friction, so we remain stationary.

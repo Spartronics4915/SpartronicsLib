@@ -85,24 +85,23 @@ public class Twist2d implements Interpolable<Twist2d>
     }
 
     /**
-     * for some applications interpolating a Twist2d may be fraught with peril. 
+     * For some applications interpolating a Twist2d may be fraught with peril. 
      * If you are trying to move from a Pose2d according to a Twist2d
      * consider using Pose2d.interpolate
      */
     @Override
-    public Twist2d interpolate(final Twist2d other, double x)
+    public Twist2d interpolate(final Twist2d endValue, double t)
     {
-        if (x <= 0)
+        if (t <= 0)
             return this;
-        else if (x >= 1)
-            return new Twist2d(other);
-        final Twist2d t = new Twist2d(
-            this.dx + x*(other.dx - this.dx),
-            this.dy + x*(other.dy - this.dy),
-            this.dtheta + x*(other.dtheta - this.dtheta
-            ));
+        else if (t >= 1)
+            return new Twist2d(endValue);
+        final Twist2d newTwist = new Twist2d(
+            this.dx + t*(endValue.dx - this.dx),
+            this.dy + t*(endValue.dy - this.dy),
+            this.dtheta + t*(endValue.dtheta - this.dtheta));
         // should just return t, no need for scaled
-        return t.scaled(x);
+        return newTwist.scaled(t);
     }
 
     @Override

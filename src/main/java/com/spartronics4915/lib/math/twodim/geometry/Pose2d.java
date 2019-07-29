@@ -1,13 +1,13 @@
 package com.spartronics4915.lib.math.twodim.geometry;
 
-import com.spartronics4915.lib.util.Interpolable;
 import com.spartronics4915.lib.math.Util;
+import com.spartronics4915.lib.math.twodim.trajectory.types.State;
 
 /**
  * Represents a 2d pose (rigid transform) containing translational and
  * rotational elements.
  */
-public class Pose2d implements Interpolable<Pose2d>
+public class Pose2d implements State<Pose2d>
 {
 
     private final Translation2d mTranslation;
@@ -149,18 +149,18 @@ public class Pose2d implements Interpolable<Pose2d>
      * Do twist interpolation of this pose assuming constant curvature.
      */
     @Override
-    public Pose2d interpolate(final Pose2d other, double x)
+    public Pose2d interpolate(final Pose2d endValue, double t)
     {
-        if (x <= 0)
+        if (t <= 0)
         {
             return new Pose2d(this);
         }
-        else if (x >= 1)
+        else if (t >= 1)
         {
-            return new Pose2d(other);
+            return new Pose2d(endValue);
         }
-        final Twist2d twist = inverse().transformBy(other).log();
-        return transformBy(twist.scaled(x).exp());
+        final Twist2d twist = inverse().transformBy(endValue).log();
+        return transformBy(twist.scaled(t).exp());
     }
 
     @Override
@@ -169,6 +169,7 @@ public class Pose2d implements Interpolable<Pose2d>
         return "T:" + mTranslation.toString() + ", R:" + mRotation.toString();
     }
 
+    @Override
     public double distance(final Pose2d other)
     {
         return inverse().transformBy(other).log().norm();
