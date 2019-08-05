@@ -11,7 +11,7 @@ public class SplineGenerator
 
     private static final double kMaxDX = 2.0; //inches
     private static final double kMaxDY = 0.05; //inches
-    private static final double kMaxDTheta = 0.1; //radians!
+    private static final Rotation2d kMaxDTheta = Rotation2d.fromRadians(0.1);
     private static final int kMinSampleSize = 1;
     private static final int kRecursionDepthLimit = 500;
     
@@ -23,7 +23,7 @@ public class SplineGenerator
      * @param t1 ending percentage of spline to parametrize
      * @return list of Pose2dWithCurvature that approximates the original spline
      */
-    public static List<Pose2dWithCurvature> parameterizeSpline(Spline s, double maxDx, double maxDy, double maxDTheta, double t0, double t1)
+    public static List<Pose2dWithCurvature> parameterizeSpline(Spline s, double maxDx, double maxDy, Rotation2d maxDTheta, double t0, double t1)
     {
         List<Pose2dWithCurvature> rv = new ArrayList<>();
         rv.add(s.getPose2dWithCurvature(0.0));
@@ -43,7 +43,7 @@ public class SplineGenerator
         return parameterizeSpline(s, kMaxDX, kMaxDY, kMaxDTheta, 0.0, 1.0);
     }
 
-    public static List<Pose2dWithCurvature> parameterizeSpline(Spline s, double maxDx, double maxDy, double maxDTheta)
+    public static List<Pose2dWithCurvature> parameterizeSpline(Spline s, double maxDx, double maxDy, Rotation2d maxDTheta)
     {
         return parameterizeSpline(s, maxDx, maxDy, maxDTheta, 0.0, 1.0);
     }
@@ -54,7 +54,7 @@ public class SplineGenerator
     }
 
     public static List<Pose2dWithCurvature> parameterizeSplines(List<? extends Spline> splines, double maxDx, double maxDy,
-            double maxDTheta)
+            Rotation2d maxDTheta)
     {
         List<Pose2dWithCurvature> rv = new ArrayList<>();
         if (splines.isEmpty())
@@ -73,7 +73,7 @@ public class SplineGenerator
     // We do a depth count because this can crash your robot with a stack overflow if you attempt to parameterize an invalid spline (Java doesn't do tail call optimization)
     private static void getSegmentArc(Spline s, AtomicInteger depthCount, List<Pose2dWithCurvature> rv, double t0, double t1, double maxDx,
             double maxDy,
-            double maxDTheta)
+            Rotation2d maxDTheta)
     {
         Translation2d p0 = s.getPoint(t0);
         Translation2d p1 = s.getPoint(t1);
@@ -82,7 +82,7 @@ public class SplineGenerator
         Pose2d transformation = new Pose2d(new Translation2d(p0, p1).rotateBy(r0.inverse()), r1.rotateBy(r0.inverse()));
         Twist2d twist = transformation.log();
 
-        if (Math.abs(twist.dy) > maxDy || Math.abs(twist.dx) > maxDx || Math.abs(twist.dtheta) > maxDTheta)
+        if (Math.abs(twist.dy) > maxDy || Math.abs(twist.dx) > maxDx || Math.abs(twist.dtheta.getRadians()) > maxDTheta.getRadians())
         {
             if (depthCount.incrementAndGet() > kRecursionDepthLimit)
             {

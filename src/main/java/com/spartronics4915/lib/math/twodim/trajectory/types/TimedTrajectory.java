@@ -70,6 +70,11 @@ public class TimedTrajectory<S extends State<S>> extends Trajectory<TimedTraject
             this.acceleration = accelerationMetersPerSecondSq;
         }
 
+        /** Special case copy-constructor */
+        public TimedState(TimedState<S> other, double newAccelerationMetersPerSecondSq) {
+            this(other.state, other.time, other.velocity, newAccelerationMetersPerSecondSq);
+        }
+
         @Override
         public TimedState<S> interpolate(TimedState<S> endValue, double time) {
             double newT = Util.interpolate(time, endValue.time, time);

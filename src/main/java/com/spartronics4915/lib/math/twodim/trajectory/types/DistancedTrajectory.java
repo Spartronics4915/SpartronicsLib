@@ -24,6 +24,10 @@ public class DistancedTrajectory<S extends State<S>> extends Trajectory<S> {
         }
     }
 
+    public DistancedTrajectory(IndexedTrajectory<S> otherTraj) {
+        this(otherTraj.mPoints);
+    }
+
     @Override
     public TrajectorySamplePoint<S> sample(double interpolant) {
         if (interpolant >= getLastInterpolant()) {

@@ -18,20 +18,24 @@ public class Twist2d implements Interpolable<Twist2d>
 
     public final double dx;
     public final double dy;
-    public final double dtheta; // Radians!
+    public final Rotation2d dtheta;
+
+    private final double mDThetaRads;
 
     public Twist2d()
     {
         this.dx = 0;
         this.dy = 0;
-        this.dtheta = 0;
+        this.dtheta = new Rotation2d();
+        mDThetaRads = 0;
     }
 
-    public Twist2d(double dx, double dy, double dtheta)
+    public Twist2d(double dx, double dy, Rotation2d dtheta)
     {
         this.dx = dx;
         this.dy = dy;
         this.dtheta = dtheta;
+        mDThetaRads = dtheta.getRadians();
     }
 
     public Twist2d(Twist2d src)
@@ -39,11 +43,12 @@ public class Twist2d implements Interpolable<Twist2d>
         this.dx = src.dx;
         this.dy = src.dy;
         this.dtheta = src.dtheta;
+        mDThetaRads = src.mDThetaRads;
     }
 
     public Twist2d scaled(double scale)
     {
-        return new Twist2d(dx * scale, dy * scale, dtheta * scale);
+        return new Twist2d(dx * scale, dy * scale, Rotation2d.fromRadians(mDThetaRads * scale));
     }
 
     public double norm()
@@ -56,9 +61,9 @@ public class Twist2d implements Interpolable<Twist2d>
 
     public double curvature()
     {
-        if (Math.abs(dtheta) < Util.kEpsilon && norm() < Util.kEpsilon)
+        if (Math.abs(mDThetaRads) < Util.kEpsilon && norm() < Util.kEpsilon)
             return 0.0;
-        return dtheta / norm();
+        return mDThetaRads / norm();
     }
 
     /**
@@ -69,16 +74,16 @@ public class Twist2d implements Interpolable<Twist2d>
      * http://ingmec.ual.es/~jlblanco/papers/jlblanco2010geometry3D_techrep.pdf
      */
     public Pose2d exp() {
-        double sin_theta = Math.sin(this.dtheta);
-        double cos_theta = Math.cos(this.dtheta);
+        double sin_theta = this.dtheta.sin();
+        double cos_theta = this.dtheta.cos();
         double s, c;
-        if (Math.abs(this.dtheta) < Util.kEpsilon) {
+        if (Math.abs(mDThetaRads) < Util.kEpsilon) {
             // small angle approximation
-            s = 1.0 - 1.0 / 6.0 * this.dtheta * this.dtheta;
-            c = .5 * this.dtheta;
+            s = 1.0 - 1.0 / 6.0 * mDThetaRads * mDThetaRads;
+            c = .5 * mDThetaRads;
         } else {
-            s = sin_theta / this.dtheta;
-            c = (1.0 - cos_theta) / this.dtheta;
+            s = sin_theta / mDThetaRads;
+            c = (1.0 - cos_theta) / mDThetaRads;
         }
         Translation2d xlate = new Translation2d(this.dx * s - this.dy * c, this.dx * c + this.dy * s);
         return new Pose2d(xlate, new Rotation2d(cos_theta, sin_theta, false));
@@ -99,7 +104,7 @@ public class Twist2d implements Interpolable<Twist2d>
         final Twist2d newTwist = new Twist2d(
             this.dx + t*(endValue.dx - this.dx),
             this.dy + t*(endValue.dy - this.dy),
-            this.dtheta + t*(endValue.dtheta - this.dtheta));
+            Rotation2d.fromRadians(mDThetaRads + t*(endValue.mDThetaRads - this.mDThetaRads)));
         // should just return t, no need for scaled
         return newTwist.scaled(t);
     }
@@ -108,6 +113,6 @@ public class Twist2d implements Interpolable<Twist2d>
     public String toString()
     {
         final DecimalFormat fmt = new DecimalFormat("#0.000");
-        return "(" + fmt.format(dx) + "," + fmt.format(dy) + "," + fmt.format(Math.toDegrees(dtheta)) + " deg)";
+        return "(" + fmt.format(dx) + "," + fmt.format(dy) + "," + fmt.format(dtheta.getDegrees()) + " deg)";
     }
 }

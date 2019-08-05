@@ -66,7 +66,7 @@ public class Pose2d implements State<Pose2d>
         }
         final Translation2d transPart = getTranslation()
                 .rotateBy(new Rotation2d(halfCos, -halfDtheta, false));
-        return new Twist2d(transPart.x(), transPart.y(), dtheta);
+        return new Twist2d(transPart.x(), transPart.y(), Rotation2d.fromRadians(dtheta));
     }
 
     public Translation2d getTranslation()
@@ -123,6 +123,10 @@ public class Pose2d implements State<Pose2d>
         return new Pose2d(mTranslation.inverse().rotateBy(invRot), invRot);
     }
 
+    public Pose2d inFrameReferenceOf(Pose2d fieldRelativeOrigin) {
+        return fieldRelativeOrigin.inverse().transformBy(this);
+    }
+
     public Pose2d normal()
     {
         return new Pose2d(mTranslation, mRotation.normal());
@@ -136,7 +140,7 @@ public class Pose2d implements State<Pose2d>
         if (!getRotation().isParallel(other.getRotation()))
             return false;
         final Twist2d twist = inverse().transformBy(other).log();
-        return (Util.epsilonEquals(twist.dy, 0.0) && Util.epsilonEquals(twist.dtheta, 0.0));
+        return (Util.epsilonEquals(twist.dy, 0.0) && Util.epsilonEquals(twist.dtheta.getRadians(), 0.0));
     }
 
     public boolean epsilonEquals(final Pose2d other, double epsilon)

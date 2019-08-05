@@ -36,7 +36,7 @@ public class Kinematics
             double deltaRotationRads)
     {
         final double dx = (leftWheelDelta + rightWheelDelta) / 2.0;
-        return new Twist2d(dx, 0.0, deltaRotationRads);
+        return new Twist2d(dx, 0.0, Rotation2d.fromDegrees(deltaRotationRads));
     }
 
     public Twist2d forwardKinematics(Rotation2d prevHeading, double leftWheelDelta, double rightWheelDelta,
@@ -44,7 +44,7 @@ public class Kinematics
     {
         final double dx = (leftWheelDelta + rightWheelDelta) / 2.0;
         final double dy = 0.0;
-        return new Twist2d(dx, dy, prevHeading.inverse().rotateBy(currentHeading).getRadians());
+        return new Twist2d(dx, dy, prevHeading.inverse().rotateBy(currentHeading));
     }
 
     /**

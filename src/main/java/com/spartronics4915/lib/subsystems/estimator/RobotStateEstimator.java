@@ -162,7 +162,7 @@ public class RobotStateEstimator extends Subsystem
         final Twist2d metricIVal = new Twist2d(
                 Units.inchesToMeters(iVal.dx) * loopintervalToSeconds,
                 Units.inchesToMeters(iVal.dy) * loopintervalToSeconds,
-                iVal.dtheta * loopintervalToSeconds);
+                Rotation2d.fromRadians(iVal.dtheta.getRadians() * loopintervalToSeconds));
 
         mSLAMCamera.sendOdometry(metricIVal);
     }

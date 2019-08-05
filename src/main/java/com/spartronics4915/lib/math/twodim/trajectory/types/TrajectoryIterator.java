@@ -36,8 +36,12 @@ public abstract class TrajectoryIterator<S extends State<S>> {
         return Math.max(0.0, mTrajectory.getLastInterpolant() - mProgress);
     }
 
-    public TrajectorySamplePoint<S> getSample() {
+    public TrajectorySamplePoint<S> getCurrentSample() {
         return mCurrentSample;
+    }
+
+    public Trajectory<S> getTrajectory() {
+        return mTrajectory;
     }
 
     public TrajectorySamplePoint<S> advance(double additionalProgress) {

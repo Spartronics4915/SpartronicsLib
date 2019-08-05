@@ -226,7 +226,7 @@ public class T265Camera
         final Pose2d transformedPose =
                 new Pose2d(currentPose.getTranslation().translateBy(mZeroingOffset.getTranslation()).rotateBy(mZeroingOffset.getRotation()),
                         currentPose.getRotation().rotateBy(mZeroingOffset.getRotation()));
-        mPoseConsumer.accept(new CameraUpdate(transformedPose, new Twist2d(dx, 0.0, dtheta), confidence));
+        mPoseConsumer.accept(new CameraUpdate(transformedPose, new Twist2d(dx, 0.0, Rotation2d.fromRadians(dtheta)), confidence));
 
         mLastRecievedPose = currentPose;
     }

@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
+import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
 import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
 import com.spartronics4915.lib.hardware.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.util.Logger;
@@ -35,7 +36,7 @@ public class TestT265Camera
             cam = new T265Camera(new Pose2d(), 0);
 
             // Just make sure this doesn't throw
-            cam.sendOdometry(new Twist2d(0, 0, 0));
+            cam.sendOdometry(new Twist2d(0, 0, new Rotation2d()));
 
             cam.start((CameraUpdate update) ->
             {
