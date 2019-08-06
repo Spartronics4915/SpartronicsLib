@@ -10,7 +10,7 @@ import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
 import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
 import com.spartronics4915.lib.hardware.sensors.T265Camera;
 import com.spartronics4915.lib.hardware.sensors.T265Camera.CameraUpdate;
-import com.spartronics4915.lib.subsystems.Subsystem;
+import com.spartronics4915.lib.subsystems.SpartronicsSubsystem;
 import com.spartronics4915.lib.subsystems.drive.AbstractDrive;
 import com.spartronics4915.lib.util.Kinematics;
 import com.spartronics4915.lib.util.Units;
@@ -18,7 +18,7 @@ import com.spartronics4915.lib.util.Units;
 /**
  * This loop keeps track of robot state whenever the robot is enabled.
  */
-public class RobotStateEstimator extends Subsystem
+public class RobotStateEstimator extends SpartronicsSubsystem
 {
 
     /**
@@ -181,5 +181,10 @@ public class RobotStateEstimator extends Subsystem
             mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, new Twist2d());
             SmartDashboard.putString("RobotState/cameraConfidence", update.confidence.toString());
         });
+    }
+
+    @Override
+    protected void initDefaultCommand() {
+        // No default command; we run a notifier instead to get more granular control over update periods.
     }
 }

@@ -1,9 +1,9 @@
 package com.spartronics4915.lib.subsystems.drive;
 
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
-import com.spartronics4915.lib.subsystems.Subsystem;
+import com.spartronics4915.lib.subsystems.SpartronicsSubsystem;
 
-public abstract class AbstractDrive extends Subsystem
+public abstract class AbstractDrive extends SpartronicsSubsystem
 {
     // TODO: Come up with a sane way to do things like velocity or open loop or path following
     // TODO: Also maybe make the minimum path following subset of this into its own abstract class like FalconLib?

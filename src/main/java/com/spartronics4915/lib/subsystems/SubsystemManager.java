@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * This class is very simple. Its only job is to call
- * {@link Subsystem#outputTelemetry()} on all registered subsystems.
+ * {@link SpartronicsSubsystem#outputTelemetry()} on all registered subsystems.
  */
 public class SubsystemManager
 {
@@ -22,16 +22,16 @@ public class SubsystemManager
     {
     }
 
-    public List<Subsystem> mSubsystems = new ArrayList<>();
+    public List<SpartronicsSubsystem> mSubsystems = new ArrayList<>();
 
-    public void registerSubsystems(Subsystem... subsystems)
+    public void registerSubsystems(SpartronicsSubsystem... subsystems)
     {
         mSubsystems.addAll(Arrays.asList(subsystems));
     }
 
     public void outputAllTelemetry()
     {
-        for (Subsystem subsystem : mSubsystems)
+        for (SpartronicsSubsystem subsystem : mSubsystems)
             subsystem.outputTelemetry();
     }
 }

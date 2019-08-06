@@ -1,6 +1,8 @@
 package com.spartronics4915.lib.subsystems;
 
 import com.spartronics4915.lib.util.Logger;
+
+import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -14,7 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * drivetrains), and functions get the
  * instance of the drivetrain and act accordingly.
  */
-public abstract class Subsystem
+public abstract class SpartronicsSubsystem extends Subsystem
 {
 
     // All subsystems should set mInitialized upon successful init.
@@ -26,7 +28,7 @@ public abstract class Subsystem
         return mInitialized;
     }
 
-    protected Subsystem()
+    protected SpartronicsSubsystem()
     {
         String classname = this.getClass().getName();
         int tail = classname.lastIndexOf('.');
@@ -40,7 +42,7 @@ public abstract class Subsystem
         }
     }
 
-    public String getName()
+    public String getClassName()
     {
         return mName;
     }
@@ -99,32 +101,32 @@ public abstract class Subsystem
     // log methods are for conventionalizing format across subsystems 
     public void logException(String msg, Throwable e)
     {
-        Logger.logThrowableCrash(this.getName() + " " + msg, e);
+        Logger.logThrowableCrash(this.getClassName() + " " + msg, e);
     }
 
     public void logError(String msg)
     {
-        Logger.error(this.getName() + " " + msg);
+        Logger.error(this.getClassName() + " " + msg);
     }
 
     public void logWarning(String msg)
     {
-        Logger.warning(this.getName() + " " + msg);
+        Logger.warning(this.getClassName() + " " + msg);
     }
 
     public void logNotice(String msg)
     {
-        Logger.notice(this.getName() + " " + msg);
+        Logger.notice(this.getClassName() + " " + msg);
     }
 
     public void logInfo(String msg)
     {
-        Logger.info(this.getName() + " " + msg);
+        Logger.info(this.getClassName() + " " + msg);
     }
 
     public void logDebug(String msg)
     {
-        Logger.debug(this.getName() + " " + msg);
+        Logger.debug(this.getClassName() + " " + msg);
     }
 
     /**

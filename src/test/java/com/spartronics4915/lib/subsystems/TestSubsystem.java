@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-public class TestSubsystem extends Subsystem
+public class TestSubsystem extends SpartronicsSubsystem
 {
     @Test
     public void testInitChecks()
@@ -20,7 +20,7 @@ public class TestSubsystem extends Subsystem
     @Test
     public void testGetName()
     {
-        assertTrue(super.getName().equals("TestSubsystem"));
+        assertTrue(super.getClassName().equals("TestSubsystem"));
     }
 
     @Override
@@ -30,6 +30,11 @@ public class TestSubsystem extends Subsystem
 
     @Override
     public void stop()
+    {
+    }
+
+    @Override
+    protected void initDefaultCommand()
     {
     }
 }

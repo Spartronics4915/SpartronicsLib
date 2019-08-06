@@ -12,7 +12,7 @@ public class TestSubsystemManager
     @Test
     public void testOutputTelemetry()
     {
-        Subsystem sub = new Subsystem()
+        SpartronicsSubsystem sub = new SpartronicsSubsystem()
         {
 
             @Override
@@ -25,6 +25,11 @@ public class TestSubsystemManager
             public void stop()
             {
                 // No-op
+            }
+
+            @Override
+            protected void initDefaultCommand() {
+                // Nope
             }
         };
 
