@@ -18,8 +18,11 @@ public class DistancedTrajectory<S extends State<S>> extends Trajectory<S> {
 
         ListIterator<S> iter = mPoints.listIterator();
         while (iter.hasNext()) {
-            // TODO: Check this
-            mDistances.add(mDistances.get(mDistances.size() - 1) + iter.next().distance(iter.next()));
+            var firstPoint = iter.next();
+            if (!iter.hasNext())
+                break;
+
+            mDistances.add(mDistances.get(mDistances.size() - 1) + firstPoint.distance(iter.next()));
             iter.previous(); // Send the iterator back by 1 (we're basically doing a peek)
         }
     }
@@ -58,12 +61,12 @@ public class DistancedTrajectory<S extends State<S>> extends Trajectory<S> {
 
     @Override
     public double getFirstInterpolant() {
-        return 0;
+        return 0.0;
     }
 
     @Override
     public double getLastInterpolant() {
-        return 0;
+        return mDistances.get(mDistances.size() - 1);
     }
 
     public static class DistancedIterator<S extends State<S>> extends TrajectoryIterator<S> {

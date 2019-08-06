@@ -93,7 +93,7 @@ public class TimedTrajectory<S extends State<S>> extends Trajectory<TimedTraject
 
         @Override
         public double distance(TimedState<S> endValue) {
-            return 0.0;
+            return this.state.distance(endValue.state);
         }
     }
 

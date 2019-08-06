@@ -25,7 +25,7 @@ public abstract class TrajectoryIterator<S extends State<S>> {
     }
 
     public boolean isDone() {
-        return getRemainingProgress() == 0.0;
+        return getRemainingProgress() <= 0.0;
     }
 
     public double getProgress() {

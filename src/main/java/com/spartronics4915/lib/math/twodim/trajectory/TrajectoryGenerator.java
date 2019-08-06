@@ -16,11 +16,12 @@ import com.spartronics4915.lib.math.twodim.trajectory.types.IndexedTrajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.State;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory.TimedState;
+import com.spartronics4915.lib.util.Units;
 
 public class TrajectoryGenerator {
 
     public static final TrajectoryGenerator defaultTrajectoryGenerator =
-        new TrajectoryGenerator(0.0508, 0.00653, Rotation2d.fromDegrees(5));
+        new TrajectoryGenerator(Units.inchesToMeters(2), Units.inchesToMeters(0.2), Rotation2d.fromDegrees(5));
 
     /** Meters */
     private final double kMaxDx, kMaxDy;
@@ -81,7 +82,10 @@ public class TrajectoryGenerator {
 
         var iter = waypoints.listIterator();
         while (iter.hasNext()) {
-            splines.add(new QuinticHermiteSpline(iter.next(), iter.next()));
+            var firstWaypoint = iter.next();
+            if (!iter.hasNext()) break;
+
+            splines.add(new QuinticHermiteSpline(firstWaypoint, iter.next()));
             iter.previous(); // Send the iterator back by 1 (we're basically doing a peek)
         }
 
@@ -163,6 +167,12 @@ public class TrajectoryGenerator {
         List<ConstrainedState> constrainedStates = new ArrayList<>(states.size());
         double epsilon = 1e-6;
 
+        // Note that the forwards and backwards passes (i.e. everything below this
+        // point) are looking to find one thing, and one thing only, for each state: max
+        // acheiveable velocity given the constraints and the other adjacent states. All
+        // the other mins and maxes, and all the acceleration info is just bookkeeping
+        // to get to that point.
+
         // Forward pass. We look at pairs of consecutive states, where the start state
         // has already been velocity parameterized (though we may adjust the velocity
         // downwards during the backwards pass). We wish to find an acceleration that is
@@ -204,7 +214,7 @@ public class TrajectoryGenerator {
                 constrainedState.minAcceleration = -maxAcceleration;
                 constrainedState.maxAcceleration = maxAcceleration;
 
-                // At this point, the state is full constructed, but no constraints have been
+                // At this point, the state is fully constructed, but no constraints have been
                 // applied aside from predecessor state max accel.
 
                 // Enforce all velocity constraints
@@ -289,6 +299,8 @@ public class TrajectoryGenerator {
                 if (constrainedState.minAcceleration > actualAcceleration + epsilon) {
                     successor.minAcceleration = constrainedState.minAcceleration;
                 } else {
+                    // This sets successor.minAcceleration to NaN on the first iteration (because ds
+                    // is 0), but it doesn't matter
                     successor.minAcceleration = actualAcceleration;
                     break;
                 }
@@ -298,11 +310,11 @@ public class TrajectoryGenerator {
 
         // Integrate the constrained states forward in time to obtain the TimedStates
         List<TimedState<S>> timedStates = new ArrayList<>(states.size());
-        /** Time in seconds */
+        /** Current time in seconds */
         double t = 0;
-        /** Distance in meters */
+        /** Current distance in meters */
         double s = 0;
-        /** Velocity in meters/sec */
+        /** Current velocity in meters/sec */
         double v = 0;
         for (int i = 0; i < states.size(); i++) {
             ConstrainedState constrainedState = constrainedStates.get(i);
@@ -310,7 +322,7 @@ public class TrajectoryGenerator {
             // Here we find the dt to advance t by
             // Finding the unknown, dt, requires the current state's max velocity, the last state's actual velocity, and ds (delta distance traveled)
             double ds = constrainedState.distance - s;
-            double accel = (Math.pow(constrainedState.maxVelocity, 2) - Math.pow(v, 2)) / (2.0 / ds);
+            double accel = (Math.pow(constrainedState.maxVelocity, 2) - Math.pow(v, 2)) / (2.0 * ds);
             double dt = 0.0;
             if (i > 0) {
                 timedStates.set(i - 1, new TimedState<S>(timedStates.get(i - 1), reversed ? -accel : accel));

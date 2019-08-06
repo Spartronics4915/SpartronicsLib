@@ -16,6 +16,10 @@ public abstract class Trajectory<S extends Interpolable<S>> {
         return new TrajectoryPoint<S>(index, mPoints.get(index));
     }
 
+    public int size() {
+        return mPoints.size();
+    }
+
     public S getFirstState() {
         return mPoints.get(0);
     }

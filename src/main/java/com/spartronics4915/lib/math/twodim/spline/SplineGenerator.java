@@ -1,6 +1,7 @@
 package com.spartronics4915.lib.math.twodim.spline;
 
 import com.spartronics4915.lib.math.twodim.geometry.*;
+import com.spartronics4915.lib.util.Units;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,15 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SplineGenerator
 {
-
-    private static final double kMaxDX = 2.0; //inches
-    private static final double kMaxDY = 0.05; //inches
-    private static final Rotation2d kMaxDTheta = Rotation2d.fromRadians(0.1);
     private static final int kMinSampleSize = 1;
     private static final int kRecursionDepthLimit = 500;
     
     /**
-     * Converts a spline into a list of Twist2d's.
+     * Converts a spline into a list of Pose2dWithCurvatures
      *
      * @param s  the spline to parametrize
      * @param t0 starting percentage of spline to parametrize
@@ -27,30 +24,12 @@ public class SplineGenerator
     {
         List<Pose2dWithCurvature> rv = new ArrayList<>();
         rv.add(s.getPose2dWithCurvature(0.0));
-        double dt = (t1 - t0);
-        for (double t = 0; t < t1; t += dt / kMinSampleSize)
+        double dt = (t1 - t0) / kMinSampleSize;
+        for (double t = 0; t < t1; t += dt)
         {
-            getSegmentArc(s, new AtomicInteger(0), rv, t, t + dt / kMinSampleSize, maxDx, maxDy, maxDTheta);
+            getSegmentArc(s, new AtomicInteger(0), rv, t, t + dt, maxDx, maxDy, maxDTheta);
         }
         return rv;
-    }
-
-    /**
-     * Convenience function to parametrize a spline from t 0 to 1
-     */
-    public static List<Pose2dWithCurvature> parameterizeSpline(Spline s)
-    {
-        return parameterizeSpline(s, kMaxDX, kMaxDY, kMaxDTheta, 0.0, 1.0);
-    }
-
-    public static List<Pose2dWithCurvature> parameterizeSpline(Spline s, double maxDx, double maxDy, Rotation2d maxDTheta)
-    {
-        return parameterizeSpline(s, maxDx, maxDy, maxDTheta, 0.0, 1.0);
-    }
-
-    public static List<Pose2dWithCurvature> parameterizeSplines(List<Spline> splines)
-    {
-        return parameterizeSplines(splines, kMaxDX, kMaxDY, kMaxDTheta);
     }
 
     public static List<Pose2dWithCurvature> parameterizeSplines(List<? extends Spline> splines, double maxDx, double maxDy,
@@ -62,14 +41,14 @@ public class SplineGenerator
         rv.add(splines.get(0).getPose2dWithCurvature(0.0));
         for (final Spline s : splines)
         {
-            List<Pose2dWithCurvature> samples = parameterizeSpline(s, maxDx, maxDy, maxDTheta);
+            List<Pose2dWithCurvature> samples = parameterizeSpline(s, maxDx, maxDy, maxDTheta, 0, 1);
             samples.remove(0);
             rv.addAll(samples);
         }
         return rv;
     }
 
-    // We have to use AtomicInteger because int and Integar are pass-by-value
+    // We have to use AtomicInteger because int and Integer are pass-by-value
     // We do a depth count because this can crash your robot with a stack overflow if you attempt to parameterize an invalid spline (Java doesn't do tail call optimization)
     private static void getSegmentArc(Spline s, AtomicInteger depthCount, List<Pose2dWithCurvature> rv, double t0, double t1, double maxDx,
             double maxDy,
