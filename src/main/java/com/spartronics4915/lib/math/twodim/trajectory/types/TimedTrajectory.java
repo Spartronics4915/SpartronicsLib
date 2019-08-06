@@ -77,8 +77,8 @@ public class TimedTrajectory<S extends State<S>> extends Trajectory<TimedTraject
 
         @Override
         public TimedState<S> interpolate(TimedState<S> endValue, double time) {
-            double newT = Util.interpolate(time, endValue.time, time);
-            double deltaT = newT - time;
+            double newT = Util.interpolate(this.time, endValue.time, time);
+            double deltaT = newT - this.time;
             if (deltaT < 0.0)
                 return endValue.interpolate(this, 1.0 - time);
 

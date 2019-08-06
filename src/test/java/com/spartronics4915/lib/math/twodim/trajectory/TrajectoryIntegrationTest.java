@@ -3,6 +3,7 @@ package com.spartronics4915.lib.math.twodim.trajectory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -69,11 +70,11 @@ public class TrajectoryIntegrationTest {
         // Create the constraint that the robot must be able to traverse the trajectory
         // without ever applying more
         // than 10V.
-        var constraint = new DifferentialDriveDynamicsConstraint(drive, 10.0);
+        var voltageConstraint = new DifferentialDriveDynamicsConstraint(drive, 10.0);
 
         // Generate the timed trajectory.
         var trajectory = TrajectoryGenerator.defaultTrajectoryGenerator.generateTrajectory(
-            waypoints, Arrays.asList(), 0.0, 0.0, Units.inchesToMeters(12 * 14), 
+            waypoints, Arrays.asList(voltageConstraint), 0.0, 0.0, Units.inchesToMeters(12 * 14), 
                 Units.inchesToMeters(12 * 10), false, true
         );
 
@@ -82,13 +83,10 @@ public class TrajectoryIntegrationTest {
             final var next = trajectory.getPoint(i);
             final double dt = next.state.time - prev.state.time;
 
-            // System.out.println(next.state.acceleration + ", " + next.state.velocity);
-            // System.out.println(next.state.distance(prev.state) + ", " + (0.5 * prev.state.acceleration * dt * dt));
-
             assertEquals(prev.state.acceleration, (next.state.velocity - prev.state.velocity) / dt, 1E-9);
             assertEquals(next.state.velocity, prev.state.velocity + prev.state.acceleration * dt, 1E-9);
-            // assertEquals(next.state.distance(prev.state),
-            //         prev.state.velocity * dt + 0.5 * prev.state.acceleration * dt * dt, 1E-9);
+            assertEquals(next.state.distance(prev.state),
+                    prev.state.velocity * dt + 0.5 * prev.state.acceleration * dt * dt, 1E-9);
         }
 
         // "Follow" the trajectory.
@@ -105,13 +103,21 @@ public class TrajectoryIntegrationTest {
             }
             final TimedState<Pose2dWithCurvature> state = sample.state;
 
-            final DifferentialDrive.DriveDynamics dynamics = drive.solveInverseDynamics(
-                    new DifferentialDrive.ChassisState(state.velocity,
-                            state.velocity * state.state.getCurvature()),
-                    new DifferentialDrive.ChassisState(state.acceleration,
-                            state.acceleration * state.state.getCurvature()));
-
-            // System.out.println(state.toString() + ", " + dynamics.toString());
+            // This is designed to be exactly the same as 2019-DeepSpace output, as a comparison
+            // final DecimalFormat fmt = new DecimalFormat("#0.000");
+            // System.out.println(
+            //     new Pose2dWithCurvature(
+            //         new Translation2d(
+            //             Units.metersToInches(state.state.getTranslation().x()), Units.metersToInches(state.state.getTranslation().y())
+            //         ),
+            //         state.state.getRotation(),
+            //         state.state.getCurvature() / 0.0254,
+            //         state.state.getDCurvatureDs() / 0.0254
+            //     ).toString() +
+            //         ", t: " + fmt.format(state.time) +
+            //         ", v: " + fmt.format(Units.metersToInches(state.velocity)) +
+            //         ", a: " + fmt.format(Units.metersToInches(state.acceleration))
+            // );
         }
     }
 
