@@ -104,6 +104,7 @@ public class TrajectoryIntegrationTest {
             final TimedState<Pose2dWithCurvature> state = sample.state;
 
             // This is designed to be exactly the same as 2019-DeepSpace output, as a comparison
+            // XXX: Actually, dkds doesn't match
             // final DecimalFormat fmt = new DecimalFormat("#0.000");
             // System.out.println(
             //     new Pose2dWithCurvature(
@@ -111,8 +112,9 @@ public class TrajectoryIntegrationTest {
             //             Units.metersToInches(state.state.getTranslation().x()), Units.metersToInches(state.state.getTranslation().y())
             //         ),
             //         state.state.getRotation(),
-            //         state.state.getCurvature() / 0.0254,
-            //         state.state.getDCurvatureDs() / 0.0254
+            //         // Units are inverse
+            //         Units.inchesToMeters(state.state.getCurvature()),
+            //         Units.inchesToMeters(state.state.getDCurvatureDs())
             //     ).toString() +
             //         ", t: " + fmt.format(state.time) +
             //         ", v: " + fmt.format(Units.metersToInches(state.velocity)) +
