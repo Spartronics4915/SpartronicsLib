@@ -95,7 +95,6 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         SmartDashboard.putNumber("RobotState/velocity", cstate.predictedVelocity.dx);
     }
 
-    @Override
     public void stop()
     {
         mSLAMCamera.stop();
