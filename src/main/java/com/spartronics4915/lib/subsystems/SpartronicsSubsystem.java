@@ -135,11 +135,6 @@ public abstract class SpartronicsSubsystem extends Subsystem
      */
     public abstract void outputTelemetry();
 
-    /**
-     * This method should set all hardware to its safest default state.
-     */
-    public abstract void stop();
-
     public void zeroSensors()
     {
     }
