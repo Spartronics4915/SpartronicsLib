@@ -6,23 +6,23 @@ import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.spartronics4915.lib.subsystems.drive.SpartronicsEncoder;
-import com.spartronics4915.lib.subsystems.drive.SpartronicsMotor;
 
 public class SpartronicsSRX implements SpartronicsMotor
 {
-
-    // TODO: Sensor "model" like FalconLib? We could avoid Native Units
 
     private static final int kVelocitySlotIdx = 0;
     private static final int kPositionSlotIdx = 1;
 
     private TalonSRX mTalonSRX;
     private SpartronicsSRXEncoder mEncoder;
+    private SensorModel mSensorModel;
 
     private boolean mBrakeMode = false;
+    /** Volts */
     private double mVoltageCompSaturation = 12.0;
+    /** Native units/sec, converted to meters on get and set */
     private double mMotionProfileCruiseVelocity = 0.0;
+    /** Native units/sec^2, converted to meters on get and set */
     private double mMotionProfileAcceleration = 0.0;
     private boolean mUseMotionProfileForPosition = false;
 
@@ -34,13 +34,13 @@ public class SpartronicsSRX implements SpartronicsMotor
         @Override
         public double getVelocity()
         {
-            return mTalonSRX.getSelectedSensorVelocity();
+            return mSensorModel.toMeters(mTalonSRX.getSelectedSensorVelocity());
         }
 
         @Override
         public double getPosition()
         {
-            return mTalonSRX.getSelectedSensorPosition();
+            return mSensorModel.toMeters(mTalonSRX.getSelectedSensorPosition());
         }
 
         @Override
@@ -50,10 +50,20 @@ public class SpartronicsSRX implements SpartronicsMotor
         }
     }
 
-    public SpartronicsSRX(int deviceNumber)
+    public SpartronicsSRX(int deviceNumber, SensorModel sensorModel)
     {
-        mTalonSRX = new TalonSRX(deviceNumber);
+        this(new TalonSRX(deviceNumber), sensorModel);
+    }
+
+    public SpartronicsSRX(TalonSRX talon, SensorModel sensorModel)
+    {
+        mTalonSRX = talon;
         mEncoder = new SpartronicsSRXEncoder();
+        mSensorModel = sensorModel;
+
+        mTalonSRX.configFactoryDefault();
+        mTalonSRX.configVoltageCompSaturation(mVoltageCompSaturation);
+        mTalonSRX.enableVoltageCompensation(true);
     }
 
     @Override
@@ -111,13 +121,13 @@ public class SpartronicsSRX implements SpartronicsMotor
     @Override
     public double getMotionProfileCruiseVelocity()
     {
-        return mMotionProfileCruiseVelocity;
+        return mSensorModel.toMeters(mMotionProfileCruiseVelocity);
     }
 
     @Override
-    public void setMotionProfileCruiseVelocity(double velocity)
+    public void setMotionProfileCruiseVelocity(double velocityMetersPerSecond)
     {
-        mMotionProfileCruiseVelocity = velocity;
+        mMotionProfileCruiseVelocity = mSensorModel.toNativeUnits(velocityMetersPerSecond);
         mTalonSRX.configMotionCruiseVelocity((int) mMotionProfileCruiseVelocity);
     }
 
@@ -128,10 +138,10 @@ public class SpartronicsSRX implements SpartronicsMotor
     }
 
     @Override
-    public void setMotionProfileMaxAcceleration(double acceleration)
+    public void setMotionProfileMaxAcceleration(double accelerationMetersPerSecondSq)
     {
-        mMotionProfileAcceleration = acceleration;
-        mTalonSRX.configMotionAcceleration((int) acceleration);
+        mMotionProfileAcceleration = mSensorModel.toNativeUnits(accelerationMetersPerSecondSq);
+        mTalonSRX.configMotionAcceleration((int) accelerationMetersPerSecondSq);
     }
 
     @Override
@@ -141,13 +151,16 @@ public class SpartronicsSRX implements SpartronicsMotor
     }
 
     @Override
-    public void setDutyCycle(double dutyCycle, double arbitraryFeedForward)
+    public void setDutyCycle(double dutyCycle, double arbitraryFeedForwardVolts)
     {
         if (mLastControlMode != ControlMode.PercentOutput)
         {
             mLastControlMode = ControlMode.PercentOutput;
         }
-        mTalonSRX.set(ControlMode.PercentOutput, dutyCycle, DemandType.ArbitraryFeedForward, arbitraryFeedForward);
+        mTalonSRX.set(
+            ControlMode.PercentOutput, dutyCycle,
+            DemandType.ArbitraryFeedForward, arbitraryFeedForwardVolts / mVoltageCompSaturation
+        );
     }
 
     @Override
@@ -157,14 +170,19 @@ public class SpartronicsSRX implements SpartronicsMotor
     }
 
     @Override
-    public void setVelocity(double velocity, double arbitraryFeedForward)
+    public void setVelocity(double velocityMetersPerSecond, double arbitraryFeedForwardVolts)
     {
         if (mLastControlMode != ControlMode.Velocity)
         {
             mTalonSRX.selectProfileSlot(kVelocitySlotIdx, 0);
             mLastControlMode = ControlMode.Velocity;
         }
-        mTalonSRX.set(ControlMode.Velocity, velocity, DemandType.ArbitraryFeedForward, arbitraryFeedForward);
+
+        double velocityNative = mSensorModel.toNativeUnits(velocityMetersPerSecond);
+        mTalonSRX.set(
+            ControlMode.Velocity, velocityNative,
+            DemandType.ArbitraryFeedForward, arbitraryFeedForwardVolts / mVoltageCompSaturation
+        );
     }
 
     @Override
@@ -177,7 +195,7 @@ public class SpartronicsSRX implements SpartronicsMotor
     }
 
     @Override
-    public void setPosition(double position)
+    public void setPosition(double positionMeters)
     {
         if (mLastControlMode != ControlMode.Position)
         {
@@ -185,7 +203,9 @@ public class SpartronicsSRX implements SpartronicsMotor
             mLastControlMode = ControlMode.Position;
         }
         mTalonSRX.selectProfileSlot(kPositionSlotIdx, 0);
-        mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, position);
+
+        positionMeters = mSensorModel.toNativeUnits(positionMeters);
+        mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, positionMeters);
     }
 
     @Override
@@ -200,6 +220,21 @@ public class SpartronicsSRX implements SpartronicsMotor
     public void follow(SpartronicsSRX other)
     {
         mTalonSRX.follow(other.mTalonSRX);
+    }
+
+    @Override
+    public SensorModel getSensorModel() {
+        return mSensorModel;
+    }
+
+    @Override
+    public void setVelocity(double velocityMetersPerSecond) {
+        mTalonSRX.set(ControlMode.Velocity, mSensorModel.toNativeUnits(velocityMetersPerSecond));
+    }
+
+    @Override
+    public void setNeutral() {
+        mTalonSRX.set(ControlMode.Disabled, 0.0, DemandType.Neutral, 0.0);
     }
 
 }

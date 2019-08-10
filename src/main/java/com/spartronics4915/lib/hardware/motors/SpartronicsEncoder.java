@@ -1,4 +1,4 @@
-package com.spartronics4915.lib.subsystems.drive;
+package com.spartronics4915.lib.hardware.motors;
 
 public interface SpartronicsEncoder
 {

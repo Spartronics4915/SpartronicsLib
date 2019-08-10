@@ -1,52 +1,38 @@
 package com.spartronics4915.lib.subsystems.drive;
 
+import com.spartronics4915.lib.hardware.motors.SpartronicsMotor;
+import com.spartronics4915.lib.hardware.sensors.SpartronicsIMU;
+import com.spartronics4915.lib.math.twodim.control.TrajectoryTracker;
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
+import com.spartronics4915.lib.math.twodim.physics.DifferentialDrive;
 import com.spartronics4915.lib.subsystems.SpartronicsSubsystem;
+import com.spartronics4915.lib.subsystems.estimator.RobotStateMap;
 
-public abstract class AbstractDrive extends SpartronicsSubsystem
+public abstract class AbstractDrive extends SpartronicsSubsystem implements DifferentialTrackerDriveBase
 {
-    // TODO: Come up with a sane way to do things like velocity or open loop or path following
-    // TODO: Also maybe make the minimum path following subset of this into its own abstract class like FalconLib?
-
     protected final SpartronicsMotor mLeftMotor, mRightMotor;
     protected final SpartronicsIMU mIMU;
+    protected final DifferentialDrive mDifferentialDrive;
 
     protected Rotation2d mIMUOffset = new Rotation2d();
 
-    private final double mWheelDiameterInches;
-    private final double mNativeUnitsPerRotation;
-    private final double mTrackWidthInches;
-
-    protected AbstractDrive(SpartronicsMotor leftMotor, SpartronicsMotor rightMotor, SpartronicsIMU imu,
-            double wheelDiameterInches, double nativeUnitsPerRotation, double trackWidthInches)
+    /**
+     * This constructor will set up everything you need. It's protected to allow for
+     * a singleton drivetrain.
+     */
+    protected AbstractDrive(
+        SpartronicsMotor leftMotor,
+        SpartronicsMotor rightMotor,
+        SpartronicsIMU imu,
+        RobotStateMap stateMap,
+        DifferentialDrive differentialDrive,
+        TrajectoryTracker tracker
+    )
     {
         mLeftMotor = leftMotor;
         mRightMotor = rightMotor;
         mIMU = imu;
-
-        mWheelDiameterInches = wheelDiameterInches;
-        mNativeUnitsPerRotation = nativeUnitsPerRotation;
-        mTrackWidthInches = trackWidthInches;
-    }
-
-    private double rotationsToInches(double rotations)
-    {
-        return rotations * (mWheelDiameterInches * Math.PI);
-    }
-
-    private double inchesToRotations(double inches)
-    {
-        return inches / (mWheelDiameterInches * Math.PI);
-    }
-
-    private double inchesPerSecondToNativeUnitsPer100ms(double ips)
-    {
-        return ((ips * mNativeUnitsPerRotation) / (mWheelDiameterInches * Math.PI)) / 10;
-    }
-
-    private double nativeUnitsPer100msToInchesPerSecond(double nu)
-    {
-        return (nu / mNativeUnitsPerRotation) * 10 * (mWheelDiameterInches * Math.PI);
+        mDifferentialDrive = differentialDrive;
     }
 
     /**
@@ -73,34 +59,36 @@ public abstract class AbstractDrive extends SpartronicsSubsystem
         return mIMU.getYaw().rotateBy(mIMUOffset);
     }
 
-    public double getLeftDistanceInches()
+    /**
+     * @return The displacement of the left wheel, in meters
+     */
+    public double getLeftPosition()
     {
-        return rotationsToInches(mLeftMotor.getEncoder().getPosition() / mNativeUnitsPerRotation);
+        return mLeftMotor.getEncoder().getPosition();
     }
 
-    public double getRightDistanceInches()
+    /**
+     * @return The displacement of the right wheel, in meters
+     */
+    public double getRightPosition()
     {
-        return rotationsToInches(mRightMotor.getEncoder().getPosition() / mNativeUnitsPerRotation);
+        return mRightMotor.getEncoder().getPosition();
     }
 
-    public double getLeftVelocityInchesPerSec()
+    /**
+     * @return The left wheel's velocity in meters/second
+     */
+    public double getLeftVelocity()
     {
-        return rotationsToInches(mLeftMotor.getEncoder().getVelocity() * 10 / mNativeUnitsPerRotation);
+        return mLeftMotor.getEncoder().getVelocity();
     }
 
-    public double getRightVelocityInchesPerSec()
+    /**
+     * @return The right wheel's velocity in meters/second
+     */
+    public double getRightVelocity()
     {
-        return rotationsToInches(mRightMotor.getEncoder().getVelocity() * 10 / mNativeUnitsPerRotation);
-    }
-
-    public double getRobotLinearVelocityInchesPerSec()
-    {
-        return (getLeftVelocityInchesPerSec() + getRightVelocityInchesPerSec()) / 2.0;
-    }
-
-    public double getRobotAngularVelocityRadiansPerSec()
-    {
-        return (getLeftVelocityInchesPerSec() - getRightVelocityInchesPerSec()) / mTrackWidthInches;
+        return mRightMotor.getEncoder().getVelocity();
     }
 
     public void arcadeDrive(double linearPercent, double rotationPercent)
@@ -145,5 +133,15 @@ public abstract class AbstractDrive extends SpartronicsSubsystem
     {
         mLeftMotor.setDutyCycle(leftPercent);
         mRightMotor.setDutyCycle(rightPercent);
+    }
+
+    @Override
+    public SpartronicsMotor getLeftMotor() {
+        return mLeftMotor;
+    }
+
+    @Override
+    public SpartronicsMotor getRightMotor() {
+        return mRightMotor;
     }
 }

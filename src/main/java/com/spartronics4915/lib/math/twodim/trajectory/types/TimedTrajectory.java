@@ -28,7 +28,6 @@ public class TimedTrajectory<S extends State<S>> extends Trajectory<TimedTraject
             TimedState<S> lowerBoundState = mPoints.get(index - 1);
 
             if (Util.epsilonEquals(upperBoundState.time, lowerBoundState.time)) {
-                // XXX: Why don't we do index - 1 and index instead of index and index?
                 return new TrajectorySamplePoint<TimedState<S>>(lowerBoundState, index, index);
             } else {
                 return new TrajectorySamplePoint<TimedState<S>>(
