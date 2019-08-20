@@ -2,20 +2,16 @@ package com.spartronics4915.lib.math.twodim.trajectory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.lang.reflect.Field;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 
 import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
 import com.spartronics4915.lib.math.twodim.geometry.Pose2dWithCurvature;
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
-import com.spartronics4915.lib.math.twodim.geometry.Translation2d;
 import com.spartronics4915.lib.math.twodim.physics.DCMotorTransmission;
 import com.spartronics4915.lib.math.twodim.physics.DifferentialDrive;
 import com.spartronics4915.lib.math.twodim.trajectory.constraints.DifferentialDriveDynamicsConstraint;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory;
-import com.spartronics4915.lib.math.twodim.trajectory.types.Trajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory.TimedState;
 import com.spartronics4915.lib.math.twodim.trajectory.types.Trajectory.TrajectorySamplePoint;
 import com.spartronics4915.lib.util.Units;
