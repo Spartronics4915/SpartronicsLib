@@ -70,6 +70,21 @@ public class QuinticHermiteSpline extends Spline
      */
     private void computeCoefficients()
     {
+        // @formatter:off
+        /**
+         * This is just the result of
+         *                                 [p(0)  ]
+         * Hermite characteristic matrix * [p(1)  ]
+         *                                 [p'(0) ]
+         *                                 [p'(1) ]
+         *                                 [p''(0)]
+         *                                 [p''(1)]
+         * multiplied out. p(0) is just <x0, y0> and p(1) is <x1, y1>.
+         * The Hermite characteristic matrix is just the coefficients of
+         * the Hermite basis functions in columns.
+         */
+        // @formatter:on
+
         ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
         bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
         cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;

@@ -2,7 +2,6 @@ package com.spartronics4915.lib.subsystems.drive;
 
 import com.spartronics4915.lib.hardware.motors.SpartronicsMotor;
 import com.spartronics4915.lib.hardware.sensors.SpartronicsIMU;
-import com.spartronics4915.lib.math.twodim.control.TrajectoryTracker;
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
 import com.spartronics4915.lib.math.twodim.physics.DifferentialDrive;
 import com.spartronics4915.lib.subsystems.SpartronicsSubsystem;
@@ -25,8 +24,7 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
         SpartronicsMotor rightMotor,
         SpartronicsIMU imu,
         RobotStateMap stateMap,
-        DifferentialDrive differentialDrive,
-        TrajectoryTracker tracker
+        DifferentialDrive differentialDrive
     )
     {
         mLeftMotor = leftMotor;
