@@ -12,6 +12,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Low level service for RPLidar. Just sends and receives packets. Doesn't
  * attempt to filter bad data or care about timeouts.
+ * 
+ * This version is a derivative with many bugfixes of an original implementation
+ * in RPLidar4J.
  *
  * @author Peter Abeles, Declan Freeman-Gleason
  */

@@ -1,5 +1,7 @@
 package com.spartronics4915.lib.subsystems.drive;
 
+import java.util.function.Supplier;
+
 import com.spartronics4915.lib.math.twodim.control.TrajectoryTracker;
 import com.spartronics4915.lib.math.twodim.geometry.Pose2dWithCurvature;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory;
@@ -12,7 +14,7 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 public class TrajectoryTrackerCommand extends Command {
     
     private final TrajectoryTrackerDriveBase mDriveBase;
-    private final TimedTrajectory<Pose2dWithCurvature> mTrajectory;
+    private final Supplier<TimedTrajectory<Pose2dWithCurvature>> mTrajectory;
     private final TrajectoryTracker mTracker;
     private final RobotStateMap mRobotPositionMap;
 
@@ -28,12 +30,22 @@ public class TrajectoryTrackerCommand extends Command {
     public TrajectoryTrackerCommand(
             Subsystem driveSubsystem,
             TrajectoryTrackerDriveBase driveBase,
-            TimedTrajectory<Pose2dWithCurvature> trajectory,
+            TimedTrajectory<Pose2dWithCurvature> trajectorySupplier,
+            TrajectoryTracker tracker,
+            RobotStateMap robotPositionMap
+        ) {
+        this(driveSubsystem, driveBase, () -> trajectorySupplier, tracker, robotPositionMap);
+    }
+
+    public TrajectoryTrackerCommand(
+            Subsystem driveSubsystem,
+            TrajectoryTrackerDriveBase driveBase,
+            Supplier<TimedTrajectory<Pose2dWithCurvature>> trajectorySupplier,
             TrajectoryTracker tracker,
             RobotStateMap robotPositionMap
     ) {
         mDriveBase = driveBase;
-        mTrajectory = trajectory;
+        mTrajectory = trajectorySupplier;
         mTracker = tracker;
         mRobotPositionMap = robotPositionMap;
 
@@ -44,7 +56,7 @@ public class TrajectoryTrackerCommand extends Command {
     protected void initialize() {
         super.initialize();
 
-        mTracker.reset(mTrajectory);
+        mTracker.reset(mTrajectory.get());
     }
 
     @Override
