@@ -14,6 +14,27 @@ public class DCMotorTransmission
     protected final double mTorquePerVolt; // N m per V (stall)
     protected final double mFrictionVoltage; // V
 
+    /**
+     * @param wheelRadiusMeters Wheel radius in meters.
+     * @param linearInertiaKg Robot mass in kg
+     * @param kS Volts to break static friction
+     * @param kV Volts / meters/sec
+     * @param kA Volts / meters/sec^2
+     */
+    public DCMotorTransmission(double wheelRadiusMeters, double linearInertiaKg, double kS, double kV, double kA)
+    {
+        this(
+            1 / kV,
+            Math.pow(wheelRadiusMeters, 2) * linearInertiaKg / (2.0 * kA),
+            kS
+        );
+    }
+
+    /**
+     * @param speedPerVolt Meters/sec / volt
+     * @param torquePerVolt N m / volt
+     * @param frictionVoltage Volts to break static friction
+     */
     public DCMotorTransmission(final double speedPerVolt,
             final double torquePerVolt,
             final double frictionVoltage)
