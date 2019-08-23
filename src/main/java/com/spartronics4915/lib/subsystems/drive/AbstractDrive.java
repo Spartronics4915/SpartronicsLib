@@ -5,7 +5,6 @@ import com.spartronics4915.lib.hardware.sensors.SpartronicsIMU;
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
 import com.spartronics4915.lib.math.twodim.physics.DifferentialDrive;
 import com.spartronics4915.lib.subsystems.SpartronicsSubsystem;
-import com.spartronics4915.lib.subsystems.estimator.RobotStateMap;
 
 public abstract class AbstractDrive extends SpartronicsSubsystem implements DifferentialTrackerDriveBase
 {
@@ -23,7 +22,6 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
         SpartronicsMotor leftMotor,
         SpartronicsMotor rightMotor,
         SpartronicsIMU imu,
-        RobotStateMap stateMap,
         DifferentialDrive differentialDrive
     )
     {
@@ -141,5 +139,10 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
     @Override
     public SpartronicsMotor getRightMotor() {
         return mRightMotor;
+    }
+
+    @Override
+    public DifferentialDrive getDifferentialDrive() {
+        return mDifferentialDrive;
     }
 }

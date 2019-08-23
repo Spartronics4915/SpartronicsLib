@@ -41,8 +41,10 @@ public abstract class TrajectoryTracker {
 
                 TrajectoryTrackerVelocityOutput velocity =
                         calculateState(iterator, currentRobotPoseMeters);
-                
-                if (mPreviousVelocity == null || deltaTime <= 0) {
+                var previousVelocity = mPreviousVelocity;
+                mPreviousVelocity = velocity;
+
+                if (previousVelocity == null || deltaTime <= 0) {
                         // There should be no acceleration initially
                         return new TrajectoryTrackerOutput(
                                 velocity.linearVelocity, 0.0, velocity.angularVelocity, 0.0
@@ -50,9 +52,9 @@ public abstract class TrajectoryTracker {
                 } else {
                         return new TrajectoryTrackerOutput(
                                 velocity.linearVelocity,
-                                (velocity.linearVelocity - mPreviousVelocity.linearVelocity) / deltaTime,
+                                (velocity.linearVelocity - previousVelocity.linearVelocity) / deltaTime,
                                 velocity.angularVelocity,
-                                (velocity.angularVelocity - mPreviousVelocity.angularVelocity) / deltaTime
+                                (velocity.angularVelocity - previousVelocity.angularVelocity) / deltaTime
                         );
                 }
         }
@@ -93,7 +95,7 @@ public abstract class TrajectoryTracker {
                         double angularVelocityRadsSecond,
                         double angularAccelerationRadsSecondSq
                 ) {
-                        this.linearVelocity = linearAccelerationMetersSecondSq;
+                        this.linearVelocity = linearVelocityMetersSecond;
                         this.linearAcceleration = linearAccelerationMetersSecondSq;
                         this.angularVelocity = angularVelocityRadsSecond;
                         this.angularAcceleration = angularAccelerationRadsSecondSq;
