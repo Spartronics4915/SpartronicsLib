@@ -60,18 +60,22 @@ public class TrajectoryIntegrationTest {
             0.0, 0.0, 3.65, 1.83, false, true
         );
 
-        var tracker = new FeedForwardTracker();//new RamseteTracker(2.0, 0.7);
+        var tracker = new RamseteTracker(2.0, 0.7);
         tracker.reset(traj);
 
         var iterator = new TimedTrajectory.TimedIterator<>(traj);
+        double distanceMeters = 0.0;
         while (!tracker.isFinished()) {
             tracker.getReferencePoint();
             var out = tracker.nextState(iterator.getCurrentSample().state.state.getPose(), iterator.getProgress());
 
             System.out.println(out.linearVelocity);
 
+            distanceMeters += out.linearVelocity * 0.1;
+
             iterator.advance(0.1);
         }
+        System.out.println("Distance = " + distanceMeters);
     }
 
     @Test
@@ -132,7 +136,7 @@ public class TrajectoryIntegrationTest {
             final TimedState<Pose2dWithCurvature> state = sample.state;
 
             // This is designed to be exactly the same as 2019-DeepSpace output, as a comparison
-            // XXX: Actually, dkds doesn't match... Numerical stability?
+            // XXX: dkds doesn't match... Numerical stability?
             // final DecimalFormat fmt = new DecimalFormat("#0.000");
             // System.out.println(
             //     new Pose2dWithCurvature(

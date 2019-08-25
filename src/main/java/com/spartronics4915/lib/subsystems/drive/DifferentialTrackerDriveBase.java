@@ -41,15 +41,15 @@ public interface DifferentialTrackerDriveBase extends TrajectoryTrackerDriveBase
     }
 
     public default void setOutput(
-        WheelState wheelVelocitiesMetersPerSecond,
+        WheelState wheelVelocitiesRadiansPerSecond,
         WheelState wheelVoltages
     ) {
         getLeftMotor().setVelocity(
-            (wheelVelocitiesMetersPerSecond.left * getDifferentialDrive().wheelRadius()),
+            (wheelVelocitiesRadiansPerSecond.left * getDifferentialDrive().wheelRadius()),
             wheelVoltages.left
         );
         getRightMotor().setVelocity(
-            (wheelVelocitiesMetersPerSecond.right * getDifferentialDrive().wheelRadius()),
+            (wheelVelocitiesRadiansPerSecond.right * getDifferentialDrive().wheelRadius()),
             wheelVoltages.right
         );
     }

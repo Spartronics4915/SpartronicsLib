@@ -10,8 +10,9 @@ import com.spartronics4915.lib.math.twodim.trajectory.types.Trajectory.Trajector
 import com.spartronics4915.lib.util.DeltaTime;
 
 public abstract class TrajectoryTracker {
-        private TimedIterator<Pose2dWithCurvature> mTrajectoryIterator = null;
         private final DeltaTime mDeltaTimeController = new DeltaTime();
+
+        private TimedIterator<Pose2dWithCurvature> mTrajectoryIterator = null;
         private TrajectoryTrackerVelocityOutput mPreviousVelocity = null;
 
         public TrajectorySamplePoint<TimedState<Pose2dWithCurvature>> getReferencePoint() {

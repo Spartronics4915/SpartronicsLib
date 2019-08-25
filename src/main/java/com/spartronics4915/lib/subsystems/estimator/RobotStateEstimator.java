@@ -67,17 +67,17 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         resetRobotStateMaps(new Pose2d());
     }
 
-    public void resetRobotStateMaps(Pose2d pose)
+    public synchronized void resetRobotStateMaps(Pose2d pose)
     {
         double time = Timer.getFPGATimestamp();
         mEncoderStateMap.reset(time, pose);
         mCameraStateMap.reset(time, pose);
 
-        mLeftPrevDist = mDrive.getLeftPosition();
-        mRightPrevDist = mDrive.getRightPosition();
+        mLeftPrevDist = mDrive.getLeftMotor().getEncoder().getPosition();
+        mRightPrevDist = mDrive.getRightMotor().getEncoder().getPosition();
 
         mSLAMCamera.setPose(pose);
-        // mDrive.setIMUHeading(pose.getRotation());
+        // mDrive.setIMUHeading(pose.getRotation()); TODO: Put back when I get a real IMU
     }
 
     @Override
@@ -125,16 +125,17 @@ public class RobotStateEstimator extends SpartronicsSubsystem
          * constant the result will be noisy. OTH: we can interpret this
          * velocity as also a distance traveled since last loop.
          */
-        final double leftDist = mDrive.getLeftPosition();
-        final double rightDist = mDrive.getRightPosition();
-        final double leftDelta = leftDist - mLeftPrevDist;
-        final double rightDelta = rightDist - mRightPrevDist;
-        final Rotation2d heading = mDrive.getIMUHeading();
-        mLeftPrevDist = leftDist;
-        mRightPrevDist = rightDist;
-        final Twist2d iVal = mKinematics.forwardKinematics(
-                last.pose.getRotation(),
-                leftDelta, rightDelta, heading);
+        final Twist2d iVal;
+        synchronized (this) {
+            final double leftDist = mDrive.getLeftMotor().getEncoder().getPosition();
+            final double rightDist = mDrive.getRightMotor().getEncoder().getPosition();
+            final double leftDelta = leftDist - mLeftPrevDist;
+            final double rightDelta = rightDist - mRightPrevDist;
+            final Rotation2d heading = mDrive.getIMUHeading();
+            mLeftPrevDist = leftDist;
+            mRightPrevDist = rightDist;
+            iVal = mKinematics.forwardKinematics(last.pose.getRotation(), leftDelta, rightDelta, heading);
+        }
 
         /*
          * Method 2, 'predictedVelocity'
@@ -149,8 +150,8 @@ public class RobotStateEstimator extends SpartronicsSubsystem
          * include the gyro heading in its calculation.
          */
         final Twist2d pVal = mKinematics.forwardKinematics(
-                mDrive.getLeftVelocity(),
-                mDrive.getRightVelocity());
+                mDrive.getLeftMotor().getEncoder().getVelocity(),
+                mDrive.getRightMotor().getEncoder().getVelocity());
 
         /*
          * integrateForward: given a last state and a current velocity,
@@ -163,10 +164,7 @@ public class RobotStateEstimator extends SpartronicsSubsystem
 
         // We convert meters/loopinterval and radians/loopinterval to meters/sec and radians/sec
         final double loopintervalToSeconds = 1 / (Timer.getFPGATimestamp() - last.timestamp);
-        final Twist2d normalizedIVal = new Twist2d(
-                iVal.dx * loopintervalToSeconds,
-                iVal.dy * loopintervalToSeconds,
-                Rotation2d.fromRadians(iVal.dtheta.getRadians() * loopintervalToSeconds));
+        final Twist2d normalizedIVal = iVal.scaled(loopintervalToSeconds);
 
         mSLAMCamera.sendOdometry(normalizedIVal);
     }

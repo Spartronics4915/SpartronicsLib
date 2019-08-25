@@ -18,10 +18,12 @@ public class DCMotorTransmission
      * @param wheelRadiusMeters Wheel radius in meters.
      * @param linearInertiaKg Robot mass in kg
      * @param kS Volts to break static friction
-     * @param kV Volts / meters/sec
-     * @param kA Volts / meters/sec^2
+     * @param kV Volts / radians/sec
+     * @param kA Volts / radians/sec^2
      */
-    public DCMotorTransmission(double wheelRadiusMeters, double linearInertiaKg, double kS, double kV, double kA)
+    public DCMotorTransmission(
+        double wheelRadiusMeters, double linearInertiaKg,
+        double kS, double kV, double kA)
     {
         this(
             1 / kV,
@@ -31,7 +33,7 @@ public class DCMotorTransmission
     }
 
     /**
-     * @param speedPerVolt Meters/sec / volt
+     * @param speedPerVolt Radians/sec / volt
      * @param torquePerVolt N m / volt
      * @param frictionVoltage Volts to break static friction
      */

@@ -413,7 +413,7 @@ public class DifferentialDrive
     public static class WheelState
     {
 
-        /** Either meters/sec, meters/sec^2, Newton meters, or Volts */
+        /** Either radians/sec, radians/sec^2, Newton meters, or Volts */
         public double left, right;
 
         public WheelState(double left, double right)
