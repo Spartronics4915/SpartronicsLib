@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 
-public class FeedRemoteCharacterization extends Command {
+public class CharacterizeDriveBaseCommand extends Command {
 
     private final AbstractDrive mDrive;
     private final NetworkTableEntry mAutoSpeedEntry = NetworkTableInstance.getDefault().getEntry("/robot/autospeed");
@@ -26,9 +26,9 @@ public class FeedRemoteCharacterization extends Command {
      * This feeds this Python script:
      * https://github.com/robotpy/robot-characterization
      */
-    public FeedRemoteCharacterization(AbstractDrive drive, double wheelDiameterMeters) {
+    public CharacterizeDriveBaseCommand(AbstractDrive drive, double wheelDiameterMeters) {
         NetworkTableInstance.getDefault().setUpdateRate(0.010);
-        
+
         mDrive = drive;
         mWheelCircumference = wheelDiameterMeters * Math.PI;
     }
