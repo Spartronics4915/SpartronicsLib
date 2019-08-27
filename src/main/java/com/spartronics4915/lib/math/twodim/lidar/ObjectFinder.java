@@ -22,14 +22,16 @@ import edu.wpi.cscore.CameraServerJNI;
 
 public class ObjectFinder {
 
+    static {
+            // This is so libopencv_javaVERSION.so (where version is the 3-digit opencv
+            // version) gets loaded.
+            CameraServerJNI.forceLoad();
+    }
+
     /** Side length of each binning square in meters */
     private final double mBinWidth;
 
     public ObjectFinder(double binWidthMeters) {
-        // This is so libopencv_javaVERSION.so (where version is the 3-digit opencv
-        // version) gets loaded.
-        CameraServerJNI.forceLoad();
-
         mBinWidth = binWidthMeters;
     }
 
@@ -41,12 +43,10 @@ public class ObjectFinder {
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(dilationSize, dilationSize));
         Imgproc.dilate(binnedPointcloud, binnedPointcloud, kernel);
 
-        Imgcodecs.imwrite("binned.png", binnedPointcloud);
-
         Mat results = new Mat();
         int roundedRadius = (int) Math.round(radiusMeters / mBinWidth);
         Imgproc.HoughCircles(binnedPointcloud, results, Imgproc.HOUGH_GRADIENT, 1.0, (radiusMeters * 2) / mBinWidth,
-                1, minVotes, roundedRadius);
+                1, minVotes, roundedRadius - 3, roundedRadius + 3);
 
         List<Translation2d> centers = new ArrayList<>();
         for (int i = 0; i < results.cols(); i++) {
@@ -68,7 +68,6 @@ public class ObjectFinder {
         Imgcodecs.imwrite("binned.png", binnedPointcloud);
 
         Mat results = new Mat();
-        int roundedSideLengthPixels = (int) Math.floor(sideLengthMeters / mBinWidth);
         Imgproc.HoughLinesP(binnedPointcloud, results, 1, Math.PI / 360, minVotes, sideLengthMeters / mBinWidth, maxLineGapMeters / mBinWidth);
 
         System.out.println(results.dump());
@@ -80,7 +79,7 @@ public class ObjectFinder {
             var pointOne = binnedCoordsToTranslation2d(points[0], points[1], minPoint);
             var pointTwo = binnedCoordsToTranslation2d(points[2], points[3], minPoint);
 
-            if (pointOne.distance(pointTwo) > sideLengthMeters * 1.5) {
+            if (pointOne.distance(pointTwo) > sideLengthMeters + Units.inchesToMeters(2)) {
                 continue;
             }
 
