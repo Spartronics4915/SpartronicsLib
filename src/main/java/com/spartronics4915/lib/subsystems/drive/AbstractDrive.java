@@ -55,38 +55,6 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
         return mIMU.getYaw().rotateBy(mIMUOffset);
     }
 
-    /**
-     * @return The displacement of the left wheel, in meters
-     */
-    public double getLeftPosition()
-    {
-        return mLeftMotor.getEncoder().getPosition();
-    }
-
-    /**
-     * @return The displacement of the right wheel, in meters
-     */
-    public double getRightPosition()
-    {
-        return mRightMotor.getEncoder().getPosition();
-    }
-
-    /**
-     * @return The left wheel's velocity in meters/second
-     */
-    public double getLeftVelocity()
-    {
-        return mLeftMotor.getEncoder().getVelocity();
-    }
-
-    /**
-     * @return The right wheel's velocity in meters/second
-     */
-    public double getRightVelocity()
-    {
-        return mRightMotor.getEncoder().getVelocity();
-    }
-
     public void arcadeDrive(double linearPercent, double rotationPercent)
     {
         double maxInput = Math.copySign(Math.max(Math.abs(linearPercent), Math.abs(rotationPercent)), linearPercent);
