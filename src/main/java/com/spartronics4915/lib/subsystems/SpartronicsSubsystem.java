@@ -138,4 +138,10 @@ public abstract class SpartronicsSubsystem extends Subsystem
     public void zeroSensors()
     {
     }
+
+    @Override
+    public void periodic() {
+        outputTelemetry();
+        dashboardPutString("currentCommand", super.getCurrentCommandName());
+    }
 }
