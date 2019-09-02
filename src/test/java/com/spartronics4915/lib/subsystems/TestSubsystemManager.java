@@ -22,12 +22,6 @@ public class TestSubsystemManager
             }
 
             @Override
-            public void stop()
-            {
-                // No-op
-            }
-
-            @Override
             protected void initDefaultCommand() {
                 // Nope
             }

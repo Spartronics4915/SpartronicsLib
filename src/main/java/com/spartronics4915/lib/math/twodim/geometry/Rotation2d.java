@@ -133,7 +133,7 @@ public class Rotation2d implements Interpolable<Rotation2d>
 
     public boolean isParallel(final Rotation2d other)
     {
-        return Util.epsilonEquals(Translation2d.cross(toTranslation(), other.toTranslation()), 0.0);
+        return Util.epsilonEquals(toTranslation().cross(other.toTranslation()), 0.0);
     }
 
     public Translation2d toTranslation()

@@ -24,6 +24,7 @@ dependencies {
     compile wpi.deps.vendor.java()
 
     compile("gov.nist.math:jama:1.0.3")
+    compile("com.fazecast:jSerialComm:2.4.1")
 
     testCompile("org.junit.jupiter:junit-jupiter-api:5.3.2")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")

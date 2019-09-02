@@ -2,11 +2,12 @@ package com.spartronics4915.lib.math.twodim.trajectory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 
+import com.spartronics4915.lib.math.twodim.control.FeedForwardTracker;
+import com.spartronics4915.lib.math.twodim.control.RamseteTracker;
 import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
 import com.spartronics4915.lib.math.twodim.geometry.Pose2dWithCurvature;
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
@@ -15,7 +16,6 @@ import com.spartronics4915.lib.math.twodim.physics.DCMotorTransmission;
 import com.spartronics4915.lib.math.twodim.physics.DifferentialDrive;
 import com.spartronics4915.lib.math.twodim.trajectory.constraints.DifferentialDriveDynamicsConstraint;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory;
-import com.spartronics4915.lib.math.twodim.trajectory.types.Trajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory.TimedState;
 import com.spartronics4915.lib.math.twodim.trajectory.types.Trajectory.TrajectorySamplePoint;
 import com.spartronics4915.lib.util.Units;
@@ -24,27 +24,59 @@ import org.junit.jupiter.api.Test;
 
 public class TrajectoryIntegrationTest {
 
-    // @Test
-    // public void testFollowerTrajectoryGenerator() {
-    //     // Specify desired waypoints.
-    //     List<Translation2d> waypoints = Arrays.asList(new Translation2d(0.0, 0.0), new Translation2d(24.0, 0.0),
-    //             new Translation2d(36.0, 0.0), new Translation2d(36.0, 24.0), new Translation2d(60.0, 24.0));
+    @Test
+    public void testPathFollower() {
+        final double kDriveTrackScrubFactor = 1.063; // determine with auto mode
+        final double kDriveTrackWidth = Units.inchesToMeters(23.75 * kDriveTrackScrubFactor);
+        final double kDriveWheelDiameter = Units.inchesToMeters(6);
+        final double kDriveWheelRadius = kDriveWheelDiameter / 2.0;
 
-    //     // Create the reference trajectory (straight line motion between waypoints).
-    //     Trajectory<Translation2d> reference_trajectory = new Trajectory<>(waypoints);
+        final double kDriveRightVIntercept = 0.7714; // V
+        final double kDriveRightKv = 0.1920; // V per rad/s
+        final double kDriveRightKa = 0.0533; // V per rad/s^2
 
-    //     // Generate a smooth (continuous curvature) path to follow.
-    //     IPathFollower path_follower = new PurePursuitController<Translation2d>(new DistanceView<>(reference_trajectory),
-    //             /* sampling_dist */1.0, /* lookahead= */ 6.0, /* goal_tolerance= */ 0.1);
-    //     Trajectory<Pose2dWithCurvature> smooth_path = TrajectoryUtil.trajectoryFromPathFollower(path_follower,
-    //             Pose2dWithCurvature.identity(), /* step_size= */ 1.0, /* dcurvature_limit= */1.0);
+        final double kDriveLeftVIntercept = 0.7939; // V
+        final double kDriveLeftKv = 0.1849; // V per rad/s
+        final double kDriveLeftKa = 0.0350; // V per rad/s^2
 
-    //     assertFalse(smooth_path.isEmpty());
-    //     System.out.println(smooth_path.toCSV());
+        final double kRobotLinearInertia = 27.93; // kg (robot's mass)
+        final double kRobotAngularInertia = 1.7419; // kg m^2 (use the moi auto mode)
+        final double kRobotAngularDrag = 12.0; // N*m / (rad/sec)
 
-    //     // Time parameterize the path subject to our dynamic constraints.
-    //     // TODO
-    // }
+        final DifferentialDrive kDifferentialDrive = new DifferentialDrive(
+            kRobotLinearInertia, kRobotAngularInertia, kRobotAngularDrag,
+            kDriveWheelRadius, kDriveTrackWidth,
+            new DCMotorTransmission(
+                kDriveWheelRadius, kRobotLinearInertia, kDriveLeftVIntercept, kDriveLeftKv, kDriveLeftKa
+            ),
+            new DCMotorTransmission(
+                kDriveWheelRadius, kRobotLinearInertia, kDriveRightVIntercept, kDriveRightKv, kDriveRightKa
+            )
+        );
+        
+        var traj = TrajectoryGenerator.defaultTrajectoryGenerator.generateTrajectory(
+            Arrays.asList(new Pose2d(), new Pose2d(1, 0, new Rotation2d())),
+            Arrays.asList(new DifferentialDriveDynamicsConstraint(kDifferentialDrive, 10.0)),
+            0.0, 0.0, 3.65, 1.83, false, true
+        );
+
+        var tracker = new RamseteTracker(2.0, 0.7);
+        tracker.reset(traj);
+
+        var iterator = new TimedTrajectory.TimedIterator<>(traj);
+        double distanceMeters = 0.0;
+        while (!tracker.isFinished()) {
+            tracker.getReferencePoint();
+            var out = tracker.nextState(iterator.getCurrentSample().state.state.getPose(), iterator.getProgress());
+
+            System.out.println(out.linearVelocity);
+
+            distanceMeters += out.linearVelocity * 0.1;
+
+            iterator.advance(0.1);
+        }
+        System.out.println("Distance = " + distanceMeters);
+    }
 
     @Test
     public void testSplineTrajectoryGenerator() {
@@ -104,7 +136,7 @@ public class TrajectoryIntegrationTest {
             final TimedState<Pose2dWithCurvature> state = sample.state;
 
             // This is designed to be exactly the same as 2019-DeepSpace output, as a comparison
-            // XXX: Actually, dkds doesn't match
+            // XXX: dkds doesn't match... Numerical stability?
             // final DecimalFormat fmt = new DecimalFormat("#0.000");
             // System.out.println(
             //     new Pose2dWithCurvature(
@@ -120,6 +152,8 @@ public class TrajectoryIntegrationTest {
             //         ", v: " + fmt.format(Units.metersToInches(state.velocity)) +
             //         ", a: " + fmt.format(Units.metersToInches(state.acceleration))
             // );
+
+            System.out.println(state.velocity + "," + state.acceleration);
         }
     }
 

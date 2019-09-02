@@ -1,7 +1,6 @@
 package com.spartronics4915.lib.math.twodim.spline;
 
 import com.spartronics4915.lib.math.twodim.geometry.*;
-import com.spartronics4915.lib.util.Units;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SplineGenerator
 {
     private static final int kMinSampleSize = 1;
-    private static final int kRecursionDepthLimit = 500;
+    private static final int kRecursionDepthLimit = 250;
     
     /**
      * Converts a spline into a list of Pose2dWithCurvatures

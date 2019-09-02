@@ -17,9 +17,9 @@ constexpr auto originNodeName = "origin";
 constexpr auto exportRelocMapStopDelay = std::chrono::seconds(10);
 
 // We cache all of these because we can
-jclass holdingClass = nullptr; // This should always be T265Camera jclass
-jfieldID fieldID = nullptr;    // Field id for the field "nativeCameraObjectPointer"
-jclass exception = nullptr;    // This is "CameraJNIException"
+jclass holdingClass = nullptr;    // This should always be T265Camera jclass
+jfieldID handleFieldId = nullptr; // Field id for the field "nativeCameraObjectPointer"
+jclass exception = nullptr;       // This is "CameraJNIException"
 
 std::vector<deviceAndSensors *> toBeCleaned;
 std::mutex tbcMutex;
@@ -32,8 +32,9 @@ std::mutex tbcMutex;
  * Conversions are:
  *   Camera Z -> Robot X * -1
  *   Camera X -> Robot Y * -1
+ *   Camera Quaternion -> Counter-clockwise Euler angles (currently just yaw)
  * 
- * For ease of use, all coodrinates that come out of this wrapper are in the "robot standard" coordinate system.
+ * For ease of use, all coodrinates that come out of this wrapper are in this "robot standard" coordinate system.
  */
 
 // We do this so we don't have to fiddle with files
@@ -191,7 +192,7 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                 if (env)
                     env->ThrowNew(exception, e.what());
                 else
-                    std::cerr << "Exception in frame consumer callback could not be thrown in Java code: " << e.what() << std::endl;
+                    std::cerr << "Exception in frame consumer callback could not be thrown in Java code. Exception was: " << e.what() << std::endl;
             }
         };
 
@@ -220,7 +221,6 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JN
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
         // jints are 32 bit and are signed so we have to be careful
-        // jint shouldn't be able to be greater than UINT32_MAX, but we'll be defensive
         if (sensorId > UINT8_MAX || sensorId < 0)
             env->ThrowNew(exception, "sensorId is out of range of a 32-bit unsigned integer (is it negative?)");
 
@@ -311,7 +311,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_setOdometryInfo(JN
 
         auto size = snprintf(nullptr, 0, odometryConfig, measureCovariance, -yOffset, -xOffset, angOffset);
         char buf[size];
-        snprintf(buf, size, odometryConfig, measureCovariance, - yOffset, -xOffset, angOffset);
+        snprintf(buf, size, odometryConfig, measureCovariance, -yOffset, -xOffset, angOffset);
         auto vecBuf = std::vector<uint8_t>(buf, buf + size);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
@@ -337,7 +337,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_free(JNIEnv *env, 
         env->DeleteGlobalRef(devAndSensors->globalThis);
         delete devAndSensors;
 
-        env->SetLongField(thisObj, fieldID, 0);
+        env->SetLongField(thisObj, handleFieldId, 0);
     }
     catch (std::exception &e)
     {
@@ -375,7 +375,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *en
 
 deviceAndSensors *getDeviceFromClass(JNIEnv *env, jobject thisObj)
 {
-    auto pointer = env->GetLongField(thisObj, fieldID);
+    auto pointer = env->GetLongField(thisObj, handleFieldId);
     if (pointer == 0)
         throw std::runtime_error("nativeCameraObjectPointer cannot be 0");
     return reinterpret_cast<deviceAndSensors *>(pointer);
@@ -388,9 +388,9 @@ void ensureCache(JNIEnv *env, jobject thisObj)
         auto lHoldingClass = env->GetObjectClass(thisObj);
         holdingClass = reinterpret_cast<jclass>(env->NewGlobalRef(lHoldingClass));
     }
-    if (!fieldID)
+    if (!handleFieldId)
     {
-        fieldID = env->GetFieldID(holdingClass, "mNativeCameraObjectPointer", "J");
+        handleFieldId = env->GetFieldID(holdingClass, "mNativeCameraObjectPointer", "J");
     }
     if (!exception)
     {

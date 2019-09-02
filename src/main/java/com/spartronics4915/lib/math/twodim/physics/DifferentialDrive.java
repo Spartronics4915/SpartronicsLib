@@ -18,11 +18,13 @@ public class DifferentialDrive
     // Equivalent mass when accelerating purely linearly, in kg.
     // This is "equivalent" in that it also absorbs the effects of drivetrain inertia.
     // Measure by doing drivetrain acceleration characterization in a straight line.
+    /** Kilograms */
     protected final double mMass;
 
     // Equivalent moment of inertia when accelerating purely angularly, in kg*m^2.
     // This is "equivalent" in that it also absorbs the effects of drivetrain inertia.
     // Measure by doing drivetrain acceleration characterization while turning in place.
+    /** kg*m^2 */
     protected final double mMoi;
 
     // Drag torque (proportional to angular velocity) that resists turning, in N*m/rad/s
@@ -30,51 +32,67 @@ public class DifferentialDrive
     // velocity, likely due to scrub of wheels.
     // NOTE: this may not be a purely linear term, and we have done limited testing, but this factor helps our model to
     // better match reality.  For future seasons, we should investigate what's going on here...
+    /** N*m/rad/s */
     protected final double mAngularDrag;
 
     // Self-explanatory.  Measure by rolling the robot a known distance and counting encoder ticks.
+    /** Meters */
     protected final double mWheelRadius; // m
 
     // "Effective" kinematic wheelbase radius.  Might be larger than theoretical to compensate for skid steer.  Measure
     // by turning the robot in place several times and figuring out what the equivalent wheelbase radius is.
+    /** Meters */
     protected final double mEffectiveWheelbaseRadius; // m
 
     // Transmissions for both sides of the drive.
     protected final DCMotorTransmission mLeftTransmission;
     protected final DCMotorTransmission mRightTransmission;
 
-    public DifferentialDrive(final double mass,
-            final double moi,
-            final double angularDrag,
-            final double wheelRadius,
-            final double effectiveWheelbaseRadius,
+    public DifferentialDrive(
+            final double massKilograms,
+            final double moi, // kg m^2
+            final double angularDrag, // N*m/rad/s
+            final double wheelRadiusMeters,
+            final double effectiveWheelbaseRadiusMeters,
             final DCMotorTransmission leftTransmission,
             final DCMotorTransmission rightTransmission)
     {
-        mMass = mass;
+        mMass = massKilograms;
         mMoi = moi;
         mAngularDrag = angularDrag;
-        mWheelRadius = wheelRadius;
-        mEffectiveWheelbaseRadius = effectiveWheelbaseRadius;
+        mWheelRadius = wheelRadiusMeters;
+        mEffectiveWheelbaseRadius = effectiveWheelbaseRadiusMeters;
         mLeftTransmission = leftTransmission;
         mRightTransmission = rightTransmission;
     }
 
+    /** 
+     * @return Robot mass in kilograms
+     * */
     public double mass()
     {
         return mMass;
     }
 
+    /** 
+     * @return Robot moment of inertia in kilograms*meters^2
+     */
     public double moi()
     {
         return mMoi;
     }
 
+    /**
+     * @return Wheel radius in meters
+     */
     public double wheelRadius()
     {
         return mWheelRadius;
     }
 
+    /**
+     * @return Effective wheel radius in meters (this is used to calculate scrub)
+     */
     public double effectiveWheelbaseRadius()
     {
         return mEffectiveWheelbaseRadius;
@@ -88,6 +106,15 @@ public class DifferentialDrive
     public DCMotorTransmission rightTransmission()
     {
         return mRightTransmission;
+    }
+
+    public WheelState getVoltagesFromkV(WheelState velocities) {
+        return new WheelState(
+            velocities.left / mLeftTransmission.speedPerVolt() +
+                mLeftTransmission.frictionVoltage() * Math.signum(velocities.left),
+            velocities.right / mRightTransmission.speedPerVolt() +
+                mRightTransmission.frictionVoltage() * Math.signum(velocities.right)
+        );
     }
 
     // Input/demand could be either velocity or acceleration...the math is the same.
@@ -359,7 +386,9 @@ public class DifferentialDrive
     public static class ChassisState
     {
 
+        /** Either meters/sec or meters/sec^2 */
         public double linear;
+        /** Either radians/sec or radians/sec^2 */
         public double angular;
 
         public ChassisState(double linear, double angular)
@@ -384,8 +413,8 @@ public class DifferentialDrive
     public static class WheelState
     {
 
-        public double left;
-        public double right;
+        /** Either radians/sec, radians/sec^2, Newton meters, or Volts */
+        public double left, right;
 
         public WheelState(double left, double right)
         {
@@ -426,8 +455,10 @@ public class DifferentialDrive
     public static class DriveDynamics
     {
 
-        public double curvature = 0.0; // m^-1
-        public double dcurvature = 0.0; // m^-1/m
+        /** 1/meters */
+        public double curvature = 0.0;
+        /** 1/meters^2 */
+        public double dcurvature = 0.0;
         public ChassisState chassisVelocity = new ChassisState(); // m/s
         public ChassisState chassisAcceleration = new ChassisState(); // m/s^2
         public WheelState wheelVelocity = new WheelState(); // rad/s

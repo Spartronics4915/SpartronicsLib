@@ -29,11 +29,6 @@ public class TestSubsystem extends SpartronicsSubsystem
     }
 
     @Override
-    public void stop()
-    {
-    }
-
-    @Override
     protected void initDefaultCommand()
     {
     }

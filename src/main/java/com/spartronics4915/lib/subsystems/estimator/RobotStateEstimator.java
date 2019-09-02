@@ -17,6 +17,9 @@ import com.spartronics4915.lib.util.Units;
 
 /**
  * This loop keeps track of robot state whenever the robot is enabled.
+ * 
+ * TODO: Split out to CameraRobotStateEstimator and DifferentialDriveRobotStateEstimator.
+ * Also TODO: Remove all the velocity stuff from robot states.
  */
 public class RobotStateEstimator extends SpartronicsSubsystem
 {
@@ -24,6 +27,8 @@ public class RobotStateEstimator extends SpartronicsSubsystem
     /**
      * The SLAM camera/encoder RobotStateMap objects represent two views of the
      * robot's current state (state is pose, velocity, and distance driven).
+     * 
+     * All length units are meters.
      */
     private RobotStateMap mEncoderStateMap = new RobotStateMap();
     private RobotStateMap mCameraStateMap = new RobotStateMap();
@@ -32,8 +37,8 @@ public class RobotStateEstimator extends SpartronicsSubsystem
     private Kinematics mKinematics;
     private T265Camera mSLAMCamera;
 
-    private double mLeftPrevDist = 0.0;
-    private double mRightPrevDist = 0.0;
+    /** Meters */
+    private double mLeftPrevDist = 0.0, mRightPrevDist = 0.0;
 
     public RobotStateEstimator(AbstractDrive driveSubsystem, Kinematics kinematics, T265Camera slamra)
     {
@@ -62,17 +67,17 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         resetRobotStateMaps(new Pose2d());
     }
 
-    public void resetRobotStateMaps(Pose2d pose)
+    public synchronized void resetRobotStateMaps(Pose2d pose)
     {
         double time = Timer.getFPGATimestamp();
         mEncoderStateMap.reset(time, pose);
         mCameraStateMap.reset(time, pose);
 
-        mLeftPrevDist = mDrive.getLeftDistanceInches();
-        mRightPrevDist = mDrive.getRightDistanceInches();
+        mLeftPrevDist = mDrive.getLeftMotor().getEncoder().getPosition();
+        mRightPrevDist = mDrive.getRightMotor().getEncoder().getPosition();
 
         mSLAMCamera.setPose(pose);
-        // mDrive.setIMUHeading(pose.getRotation());
+        // mDrive.setIMUHeading(pose.getRotation()); TODO: Put back when I get a real IMU
     }
 
     @Override
@@ -81,16 +86,16 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         final RobotStateMap.State estate = mEncoderStateMap.getLatestState();
         Pose2d epose = estate.pose;
         SmartDashboard.putString("RobotState/encoderPose",
-                epose.getTranslation().x() +
-                        " " + epose.getTranslation().y() +
+                Units.metersToInches(epose.getTranslation().x()) +
+                        " " + Units.metersToInches(epose.getTranslation().y()) +
                         " " + epose.getRotation().getDegrees());
         SmartDashboard.putNumber("RobotState/encoderVelocity", estate.predictedVelocity.dx);
 
         final RobotStateMap.State cstate = getCameraRobotStateMap().getLatestState();
         Pose2d cpose = cstate.pose;
         SmartDashboard.putString("RobotState/pose",
-                cpose.getTranslation().x() +
-                        " " + cpose.getTranslation().y() +
+                Units.metersToInches(cpose.getTranslation().x()) +
+                        " " + Units.metersToInches(cpose.getTranslation().y()) +
                         " " + cpose.getRotation().getDegrees());
         SmartDashboard.putNumber("RobotState/velocity", cstate.predictedVelocity.dx);
     }
@@ -116,36 +121,37 @@ public class RobotStateEstimator extends SpartronicsSubsystem
          * 254's implementation doesn't include time computations explicitly.
          * In method 1, the implicit time is the time between samples which relates
          * to the looper time interval. Thus: leftDelta is measured in
-         * inches/loopinterval. To the degree that the loop interval isn't a
+         * meters/loopinterval. To the degree that the loop interval isn't a
          * constant the result will be noisy. OTH: we can interpret this
          * velocity as also a distance traveled since last loop.
          */
-        final double leftDist = mDrive.getLeftDistanceInches();
-        final double rightDist = mDrive.getRightDistanceInches();
-        final double leftDelta = leftDist - mLeftPrevDist;
-        final double rightDelta = rightDist - mRightPrevDist;
-        final Rotation2d heading = mDrive.getIMUHeading();
-        mLeftPrevDist = leftDist;
-        mRightPrevDist = rightDist;
-        final Twist2d iVal = mKinematics.forwardKinematics(
-                last.pose.getRotation(),
-                leftDelta, rightDelta, heading);
+        final Twist2d iVal;
+        synchronized (this) {
+            final double leftDist = mDrive.getLeftMotor().getEncoder().getPosition();
+            final double rightDist = mDrive.getRightMotor().getEncoder().getPosition();
+            final double leftDelta = leftDist - mLeftPrevDist;
+            final double rightDelta = rightDist - mRightPrevDist;
+            final Rotation2d heading = mDrive.getIMUHeading();
+            mLeftPrevDist = leftDist;
+            mRightPrevDist = rightDist;
+            iVal = mKinematics.forwardKinematics(last.pose.getRotation(), leftDelta, rightDelta, heading);
+        }
 
         /*
          * Method 2, 'predictedVelocity'
          * Directly sample the current wheel velocities. Here, linear velocities
-         * are measured in inches/sec. Since the integration step below expects
-         * velocity to be measured in inches/loopinterval, this version of velocity
+         * are measured in meters/sec. Since the integration step below expects
+         * velocity to be measured in meters/loopinterval, this version of velocity
          * can't be used directly. Moreover, the velocity we obtain from the wheel
          * encoders is integrated over a different time interval than one
          * loop-interval. It's not clear which estimation technique would deliver
-         * a better result. For visualization purposes velocity2 (in inches/sec)
+         * a better result. For visualization purposes velocity2 (in meters/sec)
          * is in human-readable form. Also of note, this variant doesn't
          * include the gyro heading in its calculation.
          */
         final Twist2d pVal = mKinematics.forwardKinematics(
-                mDrive.getLeftVelocityInchesPerSec(),
-                mDrive.getRightVelocityInchesPerSec());
+                mDrive.getLeftMotor().getEncoder().getVelocity(),
+                mDrive.getRightMotor().getEncoder().getVelocity());
 
         /*
          * integrateForward: given a last state and a current velocity,
@@ -156,14 +162,11 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         /* record the new state estimate */
         mEncoderStateMap.addObservations(Timer.getFPGATimestamp(), nextP, iVal, pVal);
 
-        // We convert inches/loopinterval and radians/loopinterval to meters/sec and radians/sec
+        // We convert meters/loopinterval and radians/loopinterval to meters/sec and radians/sec
         final double loopintervalToSeconds = 1 / (Timer.getFPGATimestamp() - last.timestamp);
-        final Twist2d metricIVal = new Twist2d(
-                Units.inchesToMeters(iVal.dx) * loopintervalToSeconds,
-                Units.inchesToMeters(iVal.dy) * loopintervalToSeconds,
-                Rotation2d.fromRadians(iVal.dtheta.getRadians() * loopintervalToSeconds));
+        final Twist2d normalizedIVal = iVal.scaled(loopintervalToSeconds);
 
-        mSLAMCamera.sendOdometry(metricIVal);
+        mSLAMCamera.sendOdometry(normalizedIVal);
     }
 
     public void enable()
@@ -173,10 +176,10 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         mSLAMCamera.start((CameraUpdate update) ->
         {
             update = new CameraUpdate(
-                    new Pose2d(Units.metersToInches(update.pose.getTranslation().x()), Units.metersToInches(update.pose.getTranslation().y()),
-                            update.pose.getRotation()),
-                    new Twist2d(Units.metersToInches(update.velocity.dx), Units.metersToInches(update.velocity.dy), update.velocity.dtheta),
-                    update.confidence);
+                    new Pose2d(update.pose.getTranslation().x(), update.pose.getTranslation().y(), update.pose.getRotation()),
+                    new Twist2d(update.velocity.dx, update.velocity.dy, update.velocity.dtheta),
+                    update.confidence
+                );
             mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, new Twist2d());
             SmartDashboard.putString("RobotState/cameraConfidence", update.confidence.toString());
         });
