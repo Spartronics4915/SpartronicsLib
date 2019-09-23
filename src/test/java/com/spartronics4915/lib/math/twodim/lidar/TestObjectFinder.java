@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.spartronics4915.lib.hardware.sensors.RPLidarA1;
+import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
+import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
 import com.spartronics4915.lib.math.twodim.geometry.Translation2d;
 import com.spartronics4915.lib.subsystems.estimator.RobotStateMap;
 import com.spartronics4915.lib.util.Units;
@@ -24,6 +26,7 @@ import edu.wpi.first.wpilibj.Timer;
 public class TestObjectFinder {
 
     private List<Translation2d> mPointcloud = new ArrayList<>();
+    private long mLastResetTime = 0;
 
     private int mEdgeDetectorValue = 1;
     private int mNumVotesNeeded = 3;
@@ -50,6 +53,16 @@ public class TestObjectFinder {
     // }
 
     @Test
+    public void testCoords() {
+        var point = new Pose2d(0, 1, new Rotation2d());
+
+        var fieldToVehicle = new Pose2d(0, 0, Rotation2d.fromDegrees(180));
+        var vehicleToLidar = new Pose2d(1, -1, Rotation2d.fromDegrees(-90));
+
+        System.out.println(fieldToVehicle.transformBy(vehicleToLidar).transformBy(point));
+    }
+
+    @Test
     public void interactivePointcloudTest() {
         final ObjectFinder finder = new ObjectFinder(0.01);
         final double circleRadiusMeters = Units.inchesToMeters(9);
@@ -69,9 +82,9 @@ public class TestObjectFinder {
 
                         int circleDiameterCentimeters = (int) Math.round(circleRadiusMeters * 100.0 * 2.0);
                         // var centers = finder.findSquares(pointcloud, new Translation2d(), 0.28, mNumVotesNeeded, 3, 0.3);
-                        var centers = finder.findCircles(mPointcloud, circleRadiusMeters, mNumVotesNeeded, 1);
+                        var centers = finder.findCircles(mPointcloud, circleRadiusMeters, mNumVotesNeeded, 3);
                         for (Translation2d center : centers) {
-                            // System.out.println(center);
+                            System.out.println(center);
                             g.setColor(Color.BLUE);
                             g.drawOval(toScreenCoordinates(center.x() - circleRadiusMeters, true), toScreenCoordinates(center.y() - circleRadiusMeters, false), circleDiameterCentimeters, circleDiameterCentimeters);
                             break;
@@ -137,9 +150,14 @@ public class TestObjectFinder {
         RPLidarA1 lidar = new RPLidarA1();
         lidar.setCallback((List<Translation2d> pointcloud) -> {
             synchronized (mPointcloud) {
-                mPointcloud = pointcloud;
+                if (System.currentTimeMillis() - mLastResetTime > 0) {
+                    mPointcloud = pointcloud;
+                    mLastResetTime = System.currentTimeMillis();
+                } else {
+                    mPointcloud.addAll(pointcloud);
+                }
             }
-        });
+        }, new RobotStateMap(), new Pose2d(Units.inchesToMeters(-5.5), Units.inchesToMeters(-14), Rotation2d.fromDegrees(180)));
         lidar.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

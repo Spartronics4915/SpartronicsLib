@@ -166,7 +166,7 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         final double loopintervalToSeconds = 1 / (Timer.getFPGATimestamp() - last.timestamp);
         final Twist2d normalizedIVal = iVal.scaled(loopintervalToSeconds);
 
-        mSLAMCamera.sendOdometry(normalizedIVal);
+        mSLAMCamera.sendOdometry(pVal);
     }
 
     public void enable()
@@ -175,11 +175,6 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         mSLAMCamera.stop();
         mSLAMCamera.start((CameraUpdate update) ->
         {
-            update = new CameraUpdate(
-                    new Pose2d(update.pose.getTranslation().x(), update.pose.getTranslation().y(), update.pose.getRotation()),
-                    new Twist2d(update.velocity.dx, update.velocity.dy, update.velocity.dtheta),
-                    update.confidence
-                );
             mCameraStateMap.addObservations(Timer.getFPGATimestamp(), update.pose, update.velocity, new Twist2d());
             SmartDashboard.putString("RobotState/cameraConfidence", update.confidence.toString());
         });
