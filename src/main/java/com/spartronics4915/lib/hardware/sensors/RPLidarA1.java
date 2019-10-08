@@ -157,9 +157,10 @@ public class RPLidarA1 {
     /** Seconds */
     private static final double kSendBlockingRetryDelay = 0.02;
     /** Seconds */
+    private static final double kReadThreadDelay = 0.02;
+    /** Seconds */
     private static final double kSendTimeout = 2;
 
-    private Thread mReadThread;
     private Consumer<Measurement> mMeasurementConsumer;
     private final SerialPort mSerialPort;
     private InputStream mInStream;
@@ -202,7 +203,7 @@ public class RPLidarA1 {
         mInStream = mSerialPort.getInputStream();
         mOutStream = mSerialPort.getOutputStream();
 
-        mReadThread = new Thread(this::readData);
+        new Thread(this::readData).start();;
 
         stop();
     }
@@ -243,6 +244,7 @@ public class RPLidarA1 {
                 mCurrentPointcloud.clear();
             }
             Translation2d point = m.getAsPoint();
+            point = new Translation2d(point.x(), -point.y());
             point = robotStateMap.getFieldToVehicle(m.timestamp).transformBy(vehicleToLidar)
                     .transformBy(new Pose2d(point, new Rotation2d())).getTranslation();
             mCurrentPointcloud.add(point);
@@ -260,20 +262,16 @@ public class RPLidarA1 {
     }
 
     public void start() {
+        mInScanMode.set(false);
         mIsStarted.set(true);
-        mReadThread.start();
 
         mSerialPort.clearDTR();
         sendData(OutgoingPacket.SCAN, IncomingPacket.SCAN, kSendTimeout);
     }
 
     public void stop() {
-        mIsStarted.set(false);
-        try {
-            mReadThread.join();
-        } catch (InterruptedException e) {
-        }
         mInScanMode.set(false);
+        mIsStarted.set(false);
 
         sendData(OutgoingPacket.RESET);
         Timer.delay(0.002); // Docs say to sleep 2ms after a reset
@@ -299,8 +297,8 @@ public class RPLidarA1 {
     private void readData() {
         try {
             // Should we allow users to stop the read thread?
-            while (mIsStarted.get()) {
-                if (mInStream.available() > 0) {
+            while (true) {
+                if (mInStream.available() > 0 && mIsStarted.get()) {
                     // Note that there is a chance packets get truncated if we exceed the read
                     // buffer.
                     // This shouldn't happen in practice though because messages aren't greater than
@@ -315,6 +313,8 @@ public class RPLidarA1 {
                         mReadBuffer[i] = mReadBuffer[i + totalUsed];
                     }
                     mEndOfDataIndex -= totalUsed;
+                } else {
+                    Timer.delay(kReadThreadDelay);
                 }
             }
         } catch (IOException e) {
@@ -440,8 +440,8 @@ public class RPLidarA1 {
 
         double timestamp = Timer.getFPGATimestamp();
         int quality = (byteZero & 0xFF) >> 2; // Convert to signed int and get rid of the last two bits
-        int angle = ((byteOne & 0xFF) | ((mReadBuffer[offset + 2] & 0xFF) << 8)) >> 1;
-        int distance = ((mReadBuffer[offset + 3] & 0xFF) | ((mReadBuffer[offset + 4] & 0xFF) << 8));
+        int angle = ((byteOne & 0xFF) | ((mReadBuffer[offset + 2] & 0xFF) << 8)) >> 1; // Convert to signed int and extract from multiple bytes
+        int distance = ((mReadBuffer[offset + 3] & 0xFF) | ((mReadBuffer[offset + 4] & 0xFF) << 8)); // Same as above
 
         double angleDegrees = angle / 64d;
         double distanceMeters = (distance / 4d) / 1000d;
