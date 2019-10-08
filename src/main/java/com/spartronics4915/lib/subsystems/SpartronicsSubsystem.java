@@ -2,7 +2,7 @@ package com.spartronics4915.lib.subsystems;
 
 import com.spartronics4915.lib.util.Logger;
 
-import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * drivetrains), and functions get the
  * instance of the drivetrain and act accordingly.
  */
-public abstract class SpartronicsSubsystem extends Subsystem
+public abstract class SpartronicsSubsystem extends SubsystemBase
 {
 
     // All subsystems should set mInitialized upon successful init.
