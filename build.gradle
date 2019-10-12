@@ -1,12 +1,13 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2019.4.1"
+    id "edu.wpi.first.NativeUtils" version "2.1.2"
     id "maven"
     id "maven-publish"
 }
 
 // Makes composite builds work
-project.group = 'com.github.Spartronics4915'
+project.group = "com.github.Spartronics4915"
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11

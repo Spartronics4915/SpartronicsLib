@@ -96,19 +96,19 @@ public class T265Camera
      * {@link T265Camera#start() start} will not be called, you must call it
      * yourself.
      * 
-     * @param robotOffset        Offset of the center of the robot from the center
+     * @param robotOffsetMeters        Offset of the center of the robot from the center
      *                           of the camera. Units are meters.
      * @param odometryCovariance Covariance of the odometry input when doing
      *                           sensor fusion (you probablywant to tune this)
      * @param relocMapPath       path (including filename) to a relocalization map
      *                           to load.
      */
-    public T265Camera(Pose2d robotOffset, double odometryCovariance, String relocMapPath)
+    public T265Camera(Pose2d robotOffsetMeters, double odometryCovariance, String relocMapPath)
     {
         mNativeCameraObjectPointer = newCamera(relocMapPath);
-        setOdometryInfo((float) robotOffset.getTranslation().x(), (float) robotOffset.getTranslation().y(),
-                (float) robotOffset.getRotation().getDegrees(), odometryCovariance);
-        mRobotOffset = robotOffset;
+        setOdometryInfo((float) robotOffsetMeters.getTranslation().x(), (float) robotOffsetMeters.getTranslation().y(),
+                (float) robotOffsetMeters.getRotation().getRadians(), odometryCovariance);
+        mRobotOffset = robotOffsetMeters;
     }
 
     /**
@@ -191,44 +191,46 @@ public class T265Camera
 
     private synchronized void consumePoseUpdate(float x, float y, float radians, float dx, float dtheta, int confOrdinal)
     {
-        if (!mIsStarted)
-            return;
-
-        // See https://github.com/IntelRealSense/librealsense/blob/7f2ba0de8769620fd672f7b44101f0758e7e2fb3/include/librealsense2/h/rs_types.h#L115 for ordinals
-        PoseConfidence confidence;
-        switch (confOrdinal)
-        {
-            case 0x0:
-                confidence = PoseConfidence.Failed;
-                break;
-            case 0x1:
-                confidence = PoseConfidence.Low;
-                break;
-            case 0x2:
-                confidence = PoseConfidence.Medium;
-                break;
-            case 0x3:
-                confidence = PoseConfidence.High;
-                break;
-            default:
-                throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
-        }
-
         // First we apply an offset to go from the camera coordinate system to the
         // robot coordinate system with an origin at the center of the robot. This
         // is not a directional transformation.
         // Then we transform the pose our camera is giving us so that it reports is
-        // the robot's pose, not the cameras. This is a directional transformation.
+        // the robot's pose, not the camera's. This is a directional transformation.
         final Pose2d currentPose =
                 new Pose2d(x - mRobotOffset.getTranslation().x(), y - mRobotOffset.getTranslation().y(), Rotation2d.fromRadians(radians))
                         .transformBy(mRobotOffset);
+
+        mLastRecievedPose = currentPose;
+
+        if (!mIsStarted)
+            return;
+
+        // See
+        // https://github.com/IntelRealSense/librealsense/blob/7f2ba0de8769620fd672f7b44101f0758e7e2fb3/include/librealsense2/h/rs_types.h#L115
+        // for ordinals
+        PoseConfidence confidence;
+        switch (confOrdinal)
+        {
+        case 0x0:
+            confidence = PoseConfidence.Failed;
+            break;
+        case 0x1:
+            confidence = PoseConfidence.Low;
+            break;
+        case 0x2:
+            confidence = PoseConfidence.Medium;
+            break;
+        case 0x3:
+            confidence = PoseConfidence.High;
+            break;
+        default:
+            throw new RuntimeException("Unknown confidence ordinal \"" + confOrdinal + "\" passed from native code");
+        }
 
         final Pose2d transformedPose =
                 new Pose2d(currentPose.getTranslation().translateBy(mZeroingOffset.getTranslation()).rotateBy(mZeroingOffset.getRotation()),
                         currentPose.getRotation().rotateBy(mZeroingOffset.getRotation()));
         mPoseConsumer.accept(new CameraUpdate(transformedPose, new Twist2d(dx, 0.0, Rotation2d.fromRadians(dtheta)), confidence));
-
-        mLastRecievedPose = currentPose;
     }
 
     /**

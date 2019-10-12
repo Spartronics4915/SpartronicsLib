@@ -203,7 +203,7 @@ public class RPLidarA1 {
         mInStream = mSerialPort.getInputStream();
         mOutStream = mSerialPort.getOutputStream();
 
-        new Thread(this::readData).start();;
+        new Thread(this::readData).start();
 
         stop();
     }
@@ -244,7 +244,6 @@ public class RPLidarA1 {
                 mCurrentPointcloud.clear();
             }
             Translation2d point = m.getAsPoint();
-            point = new Translation2d(point.x(), -point.y());
             point = robotStateMap.getFieldToVehicle(m.timestamp).transformBy(vehicleToLidar)
                     .transformBy(new Pose2d(point, new Rotation2d())).getTranslation();
             mCurrentPointcloud.add(point);
@@ -443,7 +442,8 @@ public class RPLidarA1 {
         int angle = ((byteOne & 0xFF) | ((mReadBuffer[offset + 2] & 0xFF) << 8)) >> 1; // Convert to signed int and extract from multiple bytes
         int distance = ((mReadBuffer[offset + 3] & 0xFF) | ((mReadBuffer[offset + 4] & 0xFF) << 8)); // Same as above
 
-        double angleDegrees = angle / 64d;
+        // We negate because the angle they provide is counter clockwise positive
+        double angleDegrees = -1 * angle / 64d;
         double distanceMeters = (distance / 4d) / 1000d;
 
         var m = new Measurement(isStart, quality, angleDegrees, distanceMeters, timestamp);
