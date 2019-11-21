@@ -179,9 +179,4 @@ public class RobotStateEstimator extends SpartronicsSubsystem
             SmartDashboard.putString("RobotState/cameraConfidence", update.confidence.toString());
         });
     }
-
-    @Override
-    protected void initDefaultCommand() {
-        // No default command; we run a notifier instead to get more granular control over update periods.
-    }
 }

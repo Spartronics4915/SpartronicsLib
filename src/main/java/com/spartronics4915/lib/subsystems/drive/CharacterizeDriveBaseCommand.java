@@ -1,16 +1,15 @@
 package com.spartronics4915.lib.subsystems.drive;
 
-import java.util.Arrays;
-
-import com.spartronics4915.lib.util.Logger;
+import java.util.Set;
 
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 
-public class CharacterizeDriveBaseCommand extends Command {
+public class CharacterizeDriveBaseCommand implements Command {
 
     private final AbstractDrive mDrive;
     private final NetworkTableEntry mAutoSpeedEntry = NetworkTableInstance.getDefault().getEntry("/robot/autospeed");
@@ -44,11 +43,13 @@ public class CharacterizeDriveBaseCommand extends Command {
         double now = Timer.getFPGATimestamp();
 
         // radians and radians/s
-        double leftPosition = (mDrive.getLeftMotor().getEncoder().getPosition() - mLeftInitialPosition) / mWheelCircumference * (2 * Math.PI);
+        double leftPosition = (mDrive.getLeftMotor().getEncoder().getPosition() - mLeftInitialPosition)
+                / mWheelCircumference * (2 * Math.PI);
         double leftVelocity = mDrive.getLeftMotor().getEncoder().getVelocity() / mWheelCircumference * (2 * Math.PI);
 
         // radians and raians/s
-        double rightPosition = (mDrive.getRightMotor().getEncoder().getPosition() - mRightInitialPosition) / mWheelCircumference * (2 * Math.PI);
+        double rightPosition = (mDrive.getRightMotor().getEncoder().getPosition() - mRightInitialPosition)
+                / mWheelCircumference * (2 * Math.PI);
         double rightVelocity = mDrive.getLeftMotor().getEncoder().getVelocity() / mWheelCircumference * (2 * Math.PI);
 
         // volts
@@ -81,6 +82,11 @@ public class CharacterizeDriveBaseCommand extends Command {
     public void initialize() {
         mLeftInitialPosition = mDrive.getLeftMotor().getEncoder().getPosition();
         mRightInitialPosition = mDrive.getRightMotor().getEncoder().getPosition();
+    }
+
+    @Override
+    public Set<Subsystem> getRequirements() {
+        return Set.of(mDrive);
     }
 
 }

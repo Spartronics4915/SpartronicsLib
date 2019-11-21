@@ -2,7 +2,8 @@ package com.spartronics4915.lib.subsystems;
 
 import com.spartronics4915.lib.util.Logger;
 
-import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -16,7 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * drivetrains), and functions get the
  * instance of the drivetrain and act accordingly.
  */
-public abstract class SpartronicsSubsystem extends Subsystem
+public abstract class SpartronicsSubsystem implements Subsystem
 {
 
     // All subsystems should set mInitialized upon successful init.
@@ -142,6 +143,6 @@ public abstract class SpartronicsSubsystem extends Subsystem
     @Override
     public void periodic() {
         outputTelemetry();
-        dashboardPutString("currentCommand", super.getCurrentCommandName());
+        dashboardPutString("currentCommand", CommandScheduler.getInstance().requiring(this).getName());
     }
 }

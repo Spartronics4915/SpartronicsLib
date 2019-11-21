@@ -27,9 +27,4 @@ public class TestSubsystem extends SpartronicsSubsystem
     public void outputTelemetry()
     {
     }
-
-    @Override
-    protected void initDefaultCommand()
-    {
-    }
 }
