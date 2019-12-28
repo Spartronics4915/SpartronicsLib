@@ -79,7 +79,7 @@ public class ObjectFinder {
             var pointOne = binnedCoordsToTranslation2d(points[0], points[1], minPoint);
             var pointTwo = binnedCoordsToTranslation2d(points[2], points[3], minPoint);
 
-            if (pointOne.distance(pointTwo) > sideLengthMeters + Units.inchesToMeters(2)) {
+            if (pointOne.getDistance(pointTwo) > sideLengthMeters + Units.inchesToMeters(2)) {
                 continue;
             }
 
@@ -101,7 +101,7 @@ public class ObjectFinder {
     }
 
     private Translation2d getSquareCenter(Translation2d a, Translation2d b) {
-        final double sideLength = a.distance(b);
+        final double sideLength = a.getDistance(b);
 
         var midpoint = a.translateBy(b).scale(0.5);
 
@@ -177,8 +177,8 @@ public class ObjectFinder {
          */
         public BinnedPoint(Translation2d point) {
             // Overflow possible but very unlikely
-            mBinX = (int) (point.x() / mBinWidth);
-            mBinY = (int) (point.y() / mBinWidth);
+            mBinX = (int) (point.getX() / mBinWidth);
+            mBinY = (int) (point.getY() / mBinWidth);
         }
 
         public BinnedPoint(int x, int y) {

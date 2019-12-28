@@ -48,7 +48,7 @@ public class PurePursuitTracker extends TrajectoryTracker {
         Pose2d lookaheadTransform = lookaheadState.inFrameReferenceOf(currentRobotPoseMeters);
 
         // Calculate latitudinal error
-        double xError = (referencePoint.state.state.getPose().inFrameReferenceOf(currentRobotPoseMeters).getTranslation().x());
+        double xError = (referencePoint.state.state.getPose().inFrameReferenceOf(currentRobotPoseMeters).getTranslation().getX());
 
         // Calculate the velocity at the reference point (meters/sec)
         double vd = referencePoint.state.velocity;
@@ -57,10 +57,10 @@ public class PurePursuitTracker extends TrajectoryTracker {
         double l = lookaheadTransform.getTranslation().norm();
 
         // Calculate the curvature of the arc that connects the robot and the lookahead point
-        double curvature = 2 * lookaheadTransform.getTranslation().y() / Math.pow(l, 2);
+        double curvature = 2 * lookaheadTransform.getTranslation().getY() / Math.pow(l, 2);
 
         // Adjust the linear velocity proportional to the product of a gain and the error, and the rotational error
-        double adjustedLinearVelocity = vd * lookaheadTransform.getRotation().cos() + kLat * xError;
+        double adjustedLinearVelocity = vd * lookaheadTransform.getRotation().getCos() + kLat * xError;
 
         return new TrajectoryTrackerVelocityOutput(
             adjustedLinearVelocity,

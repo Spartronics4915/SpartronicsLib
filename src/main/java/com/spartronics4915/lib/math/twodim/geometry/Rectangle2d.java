@@ -22,10 +22,10 @@ public class Rectangle2d {
 
     public Rectangle2d(Translation2d one, Translation2d two) {
         double minX, minY, maxX, maxY;
-        minX = Math.min(one.x(), two.x());
-        minY = Math.min(one.y(), two.y());
-        maxX = Math.max(one.x(), two.x());
-        maxY = Math.max(one.y(), two.y());
+        minX = Math.min(one.getX(), two.getX());
+        minY = Math.min(one.getY(), two.getY());
+        maxX = Math.max(one.getX(), two.getX());
+        maxY = Math.max(one.getY(), two.getY());
 
         mX = minX;
         mY = minY;
@@ -35,10 +35,10 @@ public class Rectangle2d {
 
     public Rectangle2d(Translation2d... points) {
         double minX, minY, maxX, maxY;
-        minX = Arrays.stream(points).map((t) -> t.x()).min(Double::compare).orElseThrow();
-        minY = Arrays.stream(points).map((t) -> t.y()).min(Double::compare).orElseThrow();
-        maxX = Arrays.stream(points).map((t) -> t.x()).max(Double::compare).orElseThrow();
-        maxY = Arrays.stream(points).map((t) -> t.y()).max(Double::compare).orElseThrow();
+        minX = Arrays.stream(points).map((t) -> t.getX()).min(Double::compare).orElseThrow();
+        minY = Arrays.stream(points).map((t) -> t.getY()).min(Double::compare).orElseThrow();
+        maxX = Arrays.stream(points).map((t) -> t.getX()).max(Double::compare).orElseThrow();
+        maxY = Arrays.stream(points).map((t) -> t.getY()).max(Double::compare).orElseThrow();
 
         mX = minX;
         mY = minY;
@@ -87,11 +87,11 @@ public class Rectangle2d {
     }
 
     public boolean contains(Translation2d t) {
-        return (t.x() > mX && t.x() < mX + mWidth) && (t.y() > mY && t.y() < mY + mHeight);
+        return (t.getX() > mX && t.getX() < mX + mWidth) && (t.getY() > mY && t.getY() < mY + mHeight);
     }
 
     public boolean doesCollide(Rectangle2d rectangle, Translation2d translation) {
-        if (Util.epsilonEquals(0, translation.x()) && Util.epsilonEquals(0, translation.y()))
+        if (Util.epsilonEquals(0, translation.getX()) && Util.epsilonEquals(0, translation.getY()))
             return false;
         // Check if it's even in range
         Rectangle2d boxRect = new Rectangle2d(
@@ -103,14 +103,14 @@ public class Rectangle2d {
         // AABB collision
         // Calculate distances
         double xInvEntry, xInvExit, yInvEntry, yInvExit;
-        if (translation.x() > 0.0) {
+        if (translation.getX() > 0.0) {
             xInvEntry = (mX - (rectangle.mX + rectangle.mWidth));
             xInvExit = ((mX + mWidth) - rectangle.mX);
         } else {
             xInvEntry = ((mX + mWidth) - rectangle.mX);
             xInvExit = (mX - (rectangle.mX + rectangle.mWidth));
         }
-        if (translation.y() > 0.0) {
+        if (translation.getY() > 0.0) {
             yInvEntry = (mY - (rectangle.mY + rectangle.mHeight));
             yInvExit = ((mY + mHeight) - rectangle.mY);
         } else {
@@ -119,19 +119,19 @@ public class Rectangle2d {
         }
         // Find time of collisions
         double xEntry, xExit, yEntry, yExit;
-        if (Util.epsilonEquals(0, translation.x())) {
+        if (Util.epsilonEquals(0, translation.getX())) {
             xEntry = Double.NEGATIVE_INFINITY;
             xExit = Double.POSITIVE_INFINITY;
         } else {
-            xEntry = xInvEntry / translation.x();
-            xExit = xInvExit / translation.x();
+            xEntry = xInvEntry / translation.getX();
+            xExit = xInvExit / translation.getX();
         }
-        if (Util.epsilonEquals(0, translation.y())) {
+        if (Util.epsilonEquals(0, translation.getY())) {
             yEntry = Double.NEGATIVE_INFINITY;
             yExit = Double.POSITIVE_INFINITY;
         } else {
-            yEntry = yInvEntry / translation.y();
-            yExit = yInvExit / translation.y();
+            yEntry = yInvEntry / translation.getY();
+            yExit = yInvExit / translation.getY();
         }
         double entryTime = Math.max(xEntry, yEntry);
         double exitTime = Math.min(xExit, yExit);

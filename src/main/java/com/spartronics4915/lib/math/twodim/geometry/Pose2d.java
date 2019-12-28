@@ -54,7 +54,7 @@ public class Pose2d implements State<Pose2d>
     {
         final double dtheta = getRotation().getRadians();
         final double halfDtheta = 0.5 * dtheta;
-        final double cosMinusOne = getRotation().cos() - 1.0;
+        final double cosMinusOne = getRotation().getCos() - 1.0;
         double halfCos; // halftheta_by_tan_of_halfdtheta;
         if (Math.abs(cosMinusOne) < Util.kEpsilon)
         {
@@ -62,11 +62,11 @@ public class Pose2d implements State<Pose2d>
         }
         else
         {
-            halfCos = -(halfDtheta * getRotation().sin()) / cosMinusOne;
+            halfCos = -(halfDtheta * getRotation().getSin()) / cosMinusOne;
         }
         final Translation2d transPart = getTranslation()
                 .rotateBy(new Rotation2d(halfCos, -halfDtheta, false));
-        return new Twist2d(transPart.x(), transPart.y(), Rotation2d.fromRadians(dtheta));
+        return new Twist2d(transPart.getX(), transPart.getY(), Rotation2d.fromRadians(dtheta));
     }
 
     public Translation2d getTranslation()
@@ -104,8 +104,8 @@ public class Pose2d implements State<Pose2d>
     public Pose2d transformBy(final double scalar)
     {
         return new Pose2d(
-                this.getRotation().cos() * scalar + this.getTranslation().x(),
-                this.getRotation().sin() * scalar + this.getTranslation().y(),
+                this.getRotation().getCos() * scalar + this.getTranslation().getX(),
+                this.getRotation().getSin() * scalar + this.getTranslation().getY(),
                 this.getRotation());
     }
 
@@ -194,6 +194,6 @@ public class Pose2d implements State<Pose2d>
 
     public Pose2d mirror()
     {
-        return new Pose2d(new Translation2d(getTranslation().x(), -getTranslation().y()), getRotation().inverse());
+        return new Pose2d(new Translation2d(getTranslation().getX(), -getTranslation().getY()), getRotation().inverse());
     }
 }

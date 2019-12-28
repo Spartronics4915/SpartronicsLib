@@ -50,8 +50,8 @@ public class RamseteTracker extends TrajectoryTracker {
         double angleError = error.getRotation().getRadians();
 
         return new TrajectoryTrackerVelocityOutput(
-            vd * error.getRotation().cos() + k1 * error.getTranslation().x(),
-            wd + kBeta * vd * sinc(angleError) * error.getTranslation().y() + k1 * angleError
+            vd * error.getRotation().getCos() + k1 * error.getTranslation().getX(),
+            wd + kBeta * vd * sinc(angleError) * error.getTranslation().getY() + k1 * angleError
         );
     }
     

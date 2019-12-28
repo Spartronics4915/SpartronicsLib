@@ -57,7 +57,7 @@ public class TrajectoryIntegrationTest {
         var traj = TrajectoryGenerator.defaultTrajectoryGenerator.generateTrajectory(
             Arrays.asList(new Pose2d(), new Pose2d(1, 0, new Rotation2d())),
             Arrays.asList(new DifferentialDriveDynamicsConstraint(kDifferentialDrive, 10.0)),
-            0.0, 0.0, 3.65, 1.83, false, true
+            0.0, 0.0, 3.65, 1.83, false
         );
 
         var tracker = new RamseteTracker(2.0, 0.7);
@@ -107,7 +107,7 @@ public class TrajectoryIntegrationTest {
         // Generate the timed trajectory.
         var trajectory = TrajectoryGenerator.defaultTrajectoryGenerator.generateTrajectory(
             waypoints, Arrays.asList(voltageConstraint), 0.0, 0.0, Units.inchesToMeters(12 * 14), 
-                Units.inchesToMeters(12 * 10), false, true
+                Units.inchesToMeters(12 * 10), false
         );
 
         for (int i = 1; i < trajectory.size(); i++) {

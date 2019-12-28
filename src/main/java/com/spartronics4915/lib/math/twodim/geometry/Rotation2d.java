@@ -53,7 +53,7 @@ public class Rotation2d implements Interpolable<Rotation2d>
 
     public Rotation2d(final Translation2d direction, boolean normalize)
     {
-        this(direction.x(), direction.y(), normalize);
+        this(direction.getX(), direction.getY(), normalize);
     }
 
     public static Rotation2d fromRadians(double angleRadians)
@@ -66,17 +66,17 @@ public class Rotation2d implements Interpolable<Rotation2d>
         return fromRadians(Math.toRadians(angleDegrees));
     }
 
-    public double cos()
+    public double getCos()
     {
         return mCosAngle;
     }
 
-    public double sin()
+    public double getSin()
     {
         return mSinAngle;
     }
 
-    public double tan()
+    public double getTan()
     {
         if (Math.abs(mCosAngle) < Util.kEpsilon)
         {

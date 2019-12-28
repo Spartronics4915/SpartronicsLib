@@ -106,7 +106,7 @@ public class T265Camera
     public T265Camera(Pose2d robotOffsetMeters, double odometryCovariance, String relocMapPath)
     {
         mNativeCameraObjectPointer = newCamera(relocMapPath);
-        setOdometryInfo((float) robotOffsetMeters.getTranslation().x(), (float) robotOffsetMeters.getTranslation().y(),
+        setOdometryInfo((float) robotOffsetMeters.getTranslation().getX(), (float) robotOffsetMeters.getTranslation().getY(),
                 (float) robotOffsetMeters.getRotation().getRadians(), odometryCovariance);
         mRobotOffset = robotOffsetMeters;
     }
@@ -161,7 +161,7 @@ public class T265Camera
     {
         Pose2d transVel = velocity.exp();
         // Only 1 odometry sensor is supported for now (index 0)
-        sendOdometryRaw(0, (float) transVel.getTranslation().x(), (float) transVel.getTranslation().y());
+        sendOdometryRaw(0, (float) transVel.getTranslation().getX(), (float) transVel.getTranslation().getY());
     }
 
     /**
@@ -197,7 +197,7 @@ public class T265Camera
         // Then we transform the pose our camera is giving us so that it reports is
         // the robot's pose, not the camera's. This is a directional transformation.
         final Pose2d currentPose =
-                new Pose2d(x - mRobotOffset.getTranslation().x(), y - mRobotOffset.getTranslation().y(), Rotation2d.fromRadians(radians))
+                new Pose2d(x - mRobotOffset.getTranslation().getX(), y - mRobotOffset.getTranslation().getY(), Rotation2d.fromRadians(radians))
                         .transformBy(mRobotOffset);
 
         mLastRecievedPose = currentPose;

@@ -74,8 +74,8 @@ public class Twist2d implements Interpolable<Twist2d>
      * http://ingmec.ual.es/~jlblanco/papers/jlblanco2010geometry3D_techrep.pdf
      */
     public Pose2d exp() {
-        double sin_theta = this.dtheta.sin();
-        double cos_theta = this.dtheta.cos();
+        double sin_theta = this.dtheta.getSin();
+        double cos_theta = this.dtheta.getCos();
         double s, c;
         if (Math.abs(mDThetaRads) < Util.kEpsilon) {
             // small angle approximation

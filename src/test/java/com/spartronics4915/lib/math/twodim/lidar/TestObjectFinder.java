@@ -31,26 +31,17 @@ public class TestObjectFinder {
     private int mEdgeDetectorValue = 1;
     private int mNumVotesNeeded = 3;
 
-    // @Test
-    // public void testCoords() {
-    //     var obj = new ObjectFinder(0.01);
-
-    //     var a = new Translation2d(-2, 1);
-    //     var b = new Translation2d(-2, 3);
-    //     assertEquals(obj.getSquareCenter(a, b), new Translation2d(-4, 2));
-
-    //     b = new Translation2d(2, 1);
-    //     a = new Translation2d(2, 3);
-    //     assertEquals(obj.getSquareCenter(a, b), new Translation2d(4, 2));
-
-    //     a = new Translation2d(2, -1);
-    //     b = new Translation2d(2, -3);
-    //     assertEquals(obj.getSquareCenter(a, b), new Translation2d(4, -2));
-
-    //     b = new Translation2d(-2, -1);
-    //     a = new Translation2d(-2, -3);
-    //     assertEquals(obj.getSquareCenter(a, b), new Translation2d(-4, -2));
-    // }
+    @Test
+    public void testGeom() {
+        var poseOne = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
+        var poseTwo = new Pose2d(1, 1, Rotation2d.fromDegrees(90));
+        System.out.println(poseOne.distance(poseTwo) + ", " + ((1.0/4.0) * 2 * Math.PI) + ", "  + poseTwo.inverse().transformBy(poseOne).log() + ", " + poseOne.getTranslation().getDistance(poseTwo.getTranslation()));
+        // for (int i = 0; i < 20; i++) {
+        //     var poseOne = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
+        //     var poseTwo = new Pose2d(1, 0, Rotation2d.fromDegrees(180));
+        //     System.out.println(poseTwo.inFrameReferenceOf(poseOne) + ", " + poseTwo.inFrameReferenceOf(poseOne).log());
+        // }
+    }
 
     @Test
     public void testCoords() {
@@ -86,7 +77,7 @@ public class TestObjectFinder {
                         for (Translation2d center : centers) {
                             System.out.println(center);
                             g.setColor(Color.BLUE);
-                            g.drawOval(toScreenCoordinates(center.x() - circleRadiusMeters, true), toScreenCoordinates(center.y() - circleRadiusMeters, false), circleDiameterCentimeters, circleDiameterCentimeters);
+                            g.drawOval(toScreenCoordinates(center.getX() - circleRadiusMeters, true), toScreenCoordinates(center.getY() - circleRadiusMeters, false), circleDiameterCentimeters, circleDiameterCentimeters);
                             break;
                         }
 
@@ -109,7 +100,7 @@ public class TestObjectFinder {
 
             private void drawPoint(Translation2d point, int quality, Graphics g) {
                 g.setColor(new Color(255 - quality, 0, 0));
-                g.drawOval(toScreenCoordinates(point.x(), true), toScreenCoordinates(point.y(), false), 1, 1);
+                g.drawOval(toScreenCoordinates(point.getX(), true), toScreenCoordinates(point.getY(), false), 1, 1);
             }
         };
         pointCloudCanvas.setSize(6000, 6000);

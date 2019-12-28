@@ -86,16 +86,16 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         final RobotStateMap.State estate = mEncoderStateMap.getLatestState();
         Pose2d epose = estate.pose;
         SmartDashboard.putString("RobotState/encoderPose",
-                Units.metersToInches(epose.getTranslation().x()) +
-                        " " + Units.metersToInches(epose.getTranslation().y()) +
+                Units.metersToInches(epose.getTranslation().getX()) +
+                        " " + Units.metersToInches(epose.getTranslation().getY()) +
                         " " + epose.getRotation().getDegrees());
         SmartDashboard.putNumber("RobotState/encoderVelocity", estate.predictedVelocity.dx);
 
         final RobotStateMap.State cstate = getCameraRobotStateMap().getLatestState();
         Pose2d cpose = cstate.pose;
         SmartDashboard.putString("RobotState/pose",
-                Units.metersToInches(cpose.getTranslation().x()) +
-                        " " + Units.metersToInches(cpose.getTranslation().y()) +
+                Units.metersToInches(cpose.getTranslation().getX()) +
+                        " " + Units.metersToInches(cpose.getTranslation().getY()) +
                         " " + cpose.getRotation().getDegrees());
         SmartDashboard.putNumber("RobotState/velocity", cstate.predictedVelocity.dx);
     }

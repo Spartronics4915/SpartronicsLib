@@ -128,7 +128,7 @@ public class RPLidarA1 {
         }
 
         public Translation2d getAsPoint() {
-            return new Translation2d(angle.cos() * distance, angle.sin() * distance);
+            return new Translation2d(angle.getCos() * distance, angle.getSin() * distance);
         }
 
         public boolean isInvalid() {

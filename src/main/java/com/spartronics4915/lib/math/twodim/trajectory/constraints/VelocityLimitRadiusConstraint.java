@@ -20,7 +20,7 @@ public class VelocityLimitRadiusConstraint implements TimingConstraint<Pose2dWit
 
     @Override
     public double getMaxVelocity(Pose2dWithCurvature state) {
-        return state.getTranslation().distance(mCenter) <= mRadius ? mVelocityLimit : Double.POSITIVE_INFINITY;
+        return state.getTranslation().getDistance(mCenter) <= mRadius ? mVelocityLimit : Double.POSITIVE_INFINITY;
     }
 
     @Override

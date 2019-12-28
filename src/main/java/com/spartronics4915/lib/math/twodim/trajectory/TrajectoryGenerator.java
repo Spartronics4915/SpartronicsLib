@@ -1,6 +1,7 @@
 package com.spartronics4915.lib.math.twodim.trajectory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,20 +9,28 @@ import com.spartronics4915.lib.math.Util;
 import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
 import com.spartronics4915.lib.math.twodim.geometry.Pose2dWithCurvature;
 import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
+import com.spartronics4915.lib.math.twodim.geometry.Translation2d;
 import com.spartronics4915.lib.math.twodim.spline.QuinticHermiteSpline;
-import com.spartronics4915.lib.math.twodim.spline.SplineGenerator;
+import com.spartronics4915.lib.math.twodim.spline.Spline;
+import com.spartronics4915.lib.math.twodim.spline.SplineHelper;
+import com.spartronics4915.lib.math.twodim.spline.SplineParameterizer;
+import com.spartronics4915.lib.math.twodim.spline.Spline.ControlVector;
+import com.spartronics4915.lib.math.twodim.spline.SplineParameterizer.MalformedSplineException;
 import com.spartronics4915.lib.math.twodim.trajectory.constraints.TimingConstraint;
 import com.spartronics4915.lib.math.twodim.trajectory.types.DistancedTrajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.IndexedTrajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.State;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory;
 import com.spartronics4915.lib.math.twodim.trajectory.types.TimedTrajectory.TimedState;
+import com.spartronics4915.lib.util.Logger;
 import com.spartronics4915.lib.util.Units;
 
 public class TrajectoryGenerator {
 
-    public static final TrajectoryGenerator defaultTrajectoryGenerator =
-        new TrajectoryGenerator(Units.inchesToMeters(2), Units.inchesToMeters(0.2), Rotation2d.fromDegrees(5));
+    public static final TrajectoryGenerator defaultTrajectoryGenerator = new TrajectoryGenerator(
+            Units.inchesToMeters(2), Units.inchesToMeters(0.2), Rotation2d.fromDegrees(5));
+    private static final TimedTrajectory<Pose2dWithCurvature> kDoNothingTrajectory = new TimedTrajectory<Pose2dWithCurvature>(
+            Arrays.asList(new TimedState<Pose2dWithCurvature>(new Pose2dWithCurvature(), 0, 0, 0)), false);
 
     /** Meters */
     private final double kMaxDx, kMaxDy;
@@ -38,81 +47,118 @@ public class TrajectoryGenerator {
         kMaxDTheta = maxDTheta;
     }
 
+    public TimedTrajectory<Pose2dWithCurvature> generateTrajectory(Pose2d start, List<Translation2d> interiorWaypoints,
+            Pose2d end, List<TimingConstraint<Pose2dWithCurvature>> constraints, double startVelocityMetersPerSec,
+            double endVelocityMetersPerSec, double maxVelocityMetersPerSec, double maxAccelerationMeterPerSecSq,
+            boolean reversed) {
+        var controlVectors = SplineHelper.getCubicControlVectorsFromWaypoints(start,
+                interiorWaypoints.toArray(new Translation2d[0]), end);
+        final var flipTransform = new Pose2d(0, 0, Rotation2d.fromDegrees(180));
+
+        // Clone the control vectors.
+        var newInitial = new Spline.ControlVector(controlVectors[0].x, controlVectors[0].y);
+        var newEnd = new Spline.ControlVector(controlVectors[1].x, controlVectors[1].y);
+
+        // Change the orientation if reversed.
+        if (reversed) {
+            newInitial.x[1] *= -1;
+            newInitial.y[1] *= -1;
+            newEnd.x[1] *= -1;
+            newEnd.y[1] *= -1;
+        }
+
+        // Get the spline points
+        List<Pose2dWithCurvature> points;
+        try {
+            points = splinePointsFromSplines(SplineHelper.getCubicSplinesFromControlVectors(newInitial,
+                    interiorWaypoints.toArray(new Translation2d[0]), newEnd));
+        } catch (MalformedSplineException e) {
+            Logger.exception(e);
+            return kDoNothingTrajectory;
+        }
+
+        // Change the points back to their original orientation.
+        var trajectory = new IndexedTrajectory<>(points);
+        if (reversed) {
+            trajectory = new IndexedTrajectory<>(trajectory.stream()
+                    .map((state) -> new Pose2dWithCurvature(state.getPose().transformBy(flipTransform),
+                            -state.getCurvature(), state.getDCurvatureDs()))
+                    .collect(Collectors.toList()));
+        }
+
+        return timeParameterizeTrajectory(new DistancedTrajectory<Pose2dWithCurvature>(trajectory), constraints,
+                startVelocityMetersPerSec, endVelocityMetersPerSec, maxVelocityMetersPerSec,
+                Math.abs(maxAccelerationMeterPerSecSq), kMaxDx, reversed);
+    }
+
     public TimedTrajectory<Pose2dWithCurvature> generateTrajectory(List<Pose2d> waypoints,
             List<TimingConstraint<Pose2dWithCurvature>> constraints, double startVelocityMetersPerSec,
             double endVelocityMetersPerSec, double maxVelocityMetersPerSec, double maxAccelerationMeterPerSecSq,
-            boolean reversed, boolean optimizeSplines) {
+            boolean reversed) {
         Pose2d flipTransform = new Pose2d(0, 0, Rotation2d.fromDegrees(180));
 
         // Make theta normal for trajectory generation if path is trajectoryReversed.
         List<Pose2d> newWaypoints = waypoints.stream()
                 .map((point) -> reversed ? point.transformBy(flipTransform) : point).collect(Collectors.toList());
 
-        var trajectory = trajectoryFromSplineWaypoints(newWaypoints, optimizeSplines);
+        var controlVectors = SplineHelper.getQuinticControlVectorsFromWaypoints(newWaypoints);
+
+        List<Pose2dWithCurvature> points;
+        try {
+            points = splinePointsFromSplines(SplineHelper
+                    .getQuinticSplinesFromControlVectors(controlVectors.toArray(new Spline.ControlVector[] {})));
+        } catch (Exception e) {
+            Logger.exception(e);
+            return kDoNothingTrajectory;
+        }
+        var trajectory = new IndexedTrajectory<>(points);
 
         // After trajectory generation, flip theta back so it's relative to the field.
         // Also fix curvature.
         // Derivative of curvature should stay the same because the change in curvature
         // will be the same.
         if (reversed) {
-            trajectory = new IndexedTrajectory<>(trajectory.stream().map((state) -> new Pose2dWithCurvature(
-                state.getPose().transformBy(flipTransform),
-                -state.getCurvature(),
-                state.getDCurvatureDs()
-            )).collect(Collectors.toList()));
+            trajectory = new IndexedTrajectory<>(trajectory.stream()
+                    .map((state) -> new Pose2dWithCurvature(state.getPose().transformBy(flipTransform),
+                            -state.getCurvature(), state.getDCurvatureDs()))
+                    .collect(Collectors.toList()));
         }
 
-        return timeParameterizeTrajectory(
-            new DistancedTrajectory<Pose2dWithCurvature>(trajectory),
-            constraints,
-            startVelocityMetersPerSec,
-            endVelocityMetersPerSec,
-            maxVelocityMetersPerSec,
-            Math.abs(maxAccelerationMeterPerSecSq),
-            kMaxDx,
-            reversed
-        );
+        return timeParameterizeTrajectory(new DistancedTrajectory<Pose2dWithCurvature>(trajectory), constraints,
+                startVelocityMetersPerSec, endVelocityMetersPerSec, maxVelocityMetersPerSec,
+                Math.abs(maxAccelerationMeterPerSecSq), kMaxDx, reversed);
     }
 
-    private IndexedTrajectory<Pose2dWithCurvature> trajectoryFromSplineWaypoints(
-        List<Pose2d> waypoints,
-        boolean optimizeSplines
-    ) {
-        List<QuinticHermiteSpline> splines = new ArrayList<>();
+    public static List<Pose2dWithCurvature> splinePointsFromSplines(Spline[] splines) {
+        // Create the vector of spline points.
+        var splinePoints = new ArrayList<Pose2dWithCurvature>();
 
-        var iter = waypoints.listIterator();
-        while (iter.hasNext()) {
-            var firstWaypoint = iter.next();
-            if (!iter.hasNext()) break;
+        // Add the first point to the vector.
+        splinePoints.add(splines[0].getPoint(0.0));
 
-            splines.add(new QuinticHermiteSpline(firstWaypoint, iter.next()));
-            iter.previous(); // Send the iterator back by 1 (we're basically doing a peek)
+        // Iterate through the vector and parameterize each spline, adding the
+        // parameterized points to the final vector.
+        for (final var spline : splines) {
+            var points = SplineParameterizer.parameterize(spline);
+
+            // Append the array of poses to the vector. We are removing the first
+            // point because it's a duplicate of the last point from the previous
+            // spline.
+            splinePoints.addAll(points.subList(1, points.size()));
         }
-
-        if (optimizeSplines)
-            QuinticHermiteSpline.optimizeSpline(splines);
-        
-        return new IndexedTrajectory<Pose2dWithCurvature>(
-            SplineGenerator.parameterizeSplines(splines, kMaxDx, kMaxDy, kMaxDTheta)
-        );
+        return splinePoints;
     }
 
     private <S extends State<S>> TimedTrajectory<S> timeParameterizeTrajectory(
-        /*
-         * Note that we don't follow the units naming convention here. This is usually
-         * bad, but this is a private method and we're trying to be less verbose.
-         * 
-         * All units are meters (step size), meters/sec (velocity) or meters/sec^2 (acceleration).
-         */
-        DistancedTrajectory<S> distancedTrajectory,
-        List<TimingConstraint<S>> constraints,
-        double startVelocity, 
-        double endVelocity,
-        double maxVelocity,
-        double maxAcceleration,
-        double stepSize,
-        boolean reversed
-    ) {
+            /*
+             * Note that we don't follow the units naming convention here. This is usually
+             * bad, but this is a private method and we're trying to be less verbose.
+             * 
+             * All units are meters (step size), meters/sec (velocity) or meters/sec^2
+             * (acceleration).
+             */
+            DistancedTrajectory<S> distancedTrajectory, List<TimingConstraint<S>> constraints, double startVelocity,
+            double endVelocity, double maxVelocity, double maxAcceleration, double stepSize, boolean reversed) {
         class ConstrainedState {
             public S state;
             /** Meters */
@@ -124,43 +170,32 @@ public class TrajectoryGenerator {
         }
 
         var accelLimiter = new Object() {
-            public void enforceAccelerationLimits(
-                boolean reversed,
-                List<TimingConstraint<S>> constraints,
-                ConstrainedState constrainedState
-            ) {
+            public void enforceAccelerationLimits(boolean reversed, List<TimingConstraint<S>> constraints,
+                    ConstrainedState constrainedState) {
                 for (TimingConstraint<S> constraint : constraints) {
-                    var minMaxAccel = constraint.getMinMaxAcceleration(
-                        constrainedState.state,
-                        (reversed ? -1 : 1) * constrainedState.maxVelocity
-                    );
+                    var minMaxAccel = constraint.getMinMaxAcceleration(constrainedState.state,
+                            (reversed ? -1 : 1) * constrainedState.maxVelocity);
                     if (!minMaxAccel.valid) {
-                        throw new RuntimeException("Constraint returned an invalid minMaxAccel for state " + constrainedState.state);
+                        throw new RuntimeException(
+                                "Constraint returned an invalid minMaxAccel for state " + constrainedState.state);
                     }
 
-                    constrainedState.minAcceleration = Math.max(
-                        constrainedState.minAcceleration,
-                        reversed ? -minMaxAccel.maxAcceleration : minMaxAccel.minAcceleration
-                    );
+                    constrainedState.minAcceleration = Math.max(constrainedState.minAcceleration,
+                            reversed ? -minMaxAccel.maxAcceleration : minMaxAccel.minAcceleration);
 
-                    constrainedState.maxAcceleration = Math.min(
-                        constrainedState.maxAcceleration,
-                        reversed ? -minMaxAccel.minAcceleration : minMaxAccel.maxAcceleration
-                    );
+                    constrainedState.maxAcceleration = Math.min(constrainedState.maxAcceleration,
+                            reversed ? -minMaxAccel.minAcceleration : minMaxAccel.maxAcceleration);
                 }
             }
         };
 
-        int distanceViewSteps= (int) Math.ceil(
-            (distancedTrajectory.getLastInterpolant() - distancedTrajectory.getFirstInterpolant()) / stepSize + 1
-        );
+        int distanceViewSteps = (int) Math.ceil(
+                (distancedTrajectory.getLastInterpolant() - distancedTrajectory.getFirstInterpolant()) / stepSize + 1);
 
         List<S> states = new ArrayList<>();
         for (int i = 0; i < distanceViewSteps; i++) {
-            S state = distancedTrajectory.sample(Util.limit(
-                i * stepSize + distancedTrajectory.getFirstInterpolant(),
-                distancedTrajectory.getFirstInterpolant(), distancedTrajectory.getLastInterpolant()
-            )).state;
+            S state = distancedTrajectory.sample(Util.limit(i * stepSize + distancedTrajectory.getFirstInterpolant(),
+                    distancedTrajectory.getFirstInterpolant(), distancedTrajectory.getLastInterpolant())).state;
             states.add(state);
         }
 
@@ -202,11 +237,10 @@ public class TrajectoryGenerator {
                 // Enforce global max velocity and max reachable velocity by global acceleration
                 // limit.
                 // vf = sqrt(vi^2 + 2*a*d)
-                // (This equation finds a final velocity given an initial velocity, acceleration, and distance)
-                constrainedState.maxVelocity = Math.min(
-                    maxVelocity,
-                    Math.sqrt(Math.pow(predecessor.maxVelocity, 2) + 2 * predecessor.maxAcceleration * ds)
-                );
+                // (This equation finds a final velocity given an initial velocity,
+                // acceleration, and distance)
+                constrainedState.maxVelocity = Math.min(maxVelocity,
+                        Math.sqrt(Math.pow(predecessor.maxVelocity, 2) + 2 * predecessor.maxAcceleration * ds));
                 if (Double.isNaN(constrainedState.maxVelocity)) {
                     throw new RuntimeException("Max velocicity is NaN");
                 }
@@ -219,10 +253,8 @@ public class TrajectoryGenerator {
 
                 // Enforce all velocity constraints
                 for (var constraint : constraints) {
-                    constrainedState.maxVelocity = Math.min(
-                        constrainedState.maxVelocity,
-                        constraint.getMaxVelocity(constrainedState.state)
-                    );
+                    constrainedState.maxVelocity = Math.min(constrainedState.maxVelocity,
+                            constraint.getMaxVelocity(constrainedState.state));
                 }
                 if (constrainedState.maxVelocity < 0.0) {
                     // This should never happen if constraints are well-behaved
@@ -233,15 +265,16 @@ public class TrajectoryGenerator {
                 accelLimiter.enforceAccelerationLimits(reversed, constraints, constrainedState);
                 if (constrainedState.minAcceleration > constrainedState.maxAcceleration) {
                     // This should never happen if constraints are well-behaved
-                    throw new RuntimeException("constrainedState min acceleration cannot be greater than max acceleration");
+                    throw new RuntimeException(
+                            "constrainedState min acceleration cannot be greater than max acceleration");
                 }
 
                 if (ds < epsilon) {
                     break;
                 }
 
-                double actualAcceleration =
-                    (Math.pow(constrainedState.maxVelocity, 2) - Math.pow(predecessor.maxVelocity, 2)) / (2 * ds);
+                double actualAcceleration = (Math.pow(constrainedState.maxVelocity, 2)
+                        - Math.pow(predecessor.maxVelocity, 2)) / (2 * ds);
                 if (constrainedState.maxAcceleration < actualAcceleration - epsilon) {
                     // If the max acceleration for this constraint state is more conservative than
                     // what we had applied, we need to reduce the max accel at the predecessor state
@@ -286,7 +319,8 @@ public class TrajectoryGenerator {
 
                 // Now check all acceleration constraints with lower max velocity
                 if (constrainedState.minAcceleration > constrainedState.maxAcceleration) {
-                    throw new RuntimeException("constrainedState min acceleration cannot be greater than max acceleration");
+                    throw new RuntimeException(
+                            "constrainedState min acceleration cannot be greater than max acceleration");
                 }
 
                 if (ds > epsilon) {
@@ -294,8 +328,8 @@ public class TrajectoryGenerator {
                 }
                 // If the min acceleration for this constraint state is more conservative than
                 // what we have applied then we need to reduce the min accel and try again
-                double actualAcceleration =
-                    (Math.pow(constrainedState.maxVelocity, 2) - Math.pow(successor.maxVelocity, 2)) / (2 * ds);
+                double actualAcceleration = (Math.pow(constrainedState.maxVelocity, 2)
+                        - Math.pow(successor.maxVelocity, 2)) / (2 * ds);
                 if (constrainedState.minAcceleration > actualAcceleration + epsilon) {
                     successor.minAcceleration = constrainedState.minAcceleration;
                 } else {
@@ -318,9 +352,10 @@ public class TrajectoryGenerator {
         double v = 0;
         for (int i = 0; i < states.size(); i++) {
             ConstrainedState constrainedState = constrainedStates.get(i);
-            
+
             // Here we find the dt to advance t by
-            // Finding the unknown, dt, requires the current state's max velocity, the last state's actual velocity, and ds (delta distance traveled)
+            // Finding the unknown, dt, requires the current state's max velocity, the last
+            // state's actual velocity, and ds (delta distance traveled)
             double ds = constrainedState.distance - s;
             double accel = (Math.pow(constrainedState.maxVelocity, 2) - Math.pow(v, 2)) / (2.0 * ds);
             double dt = 0.0;
@@ -332,7 +367,8 @@ public class TrajectoryGenerator {
                 } else if (Math.abs(v) > epsilon) {
                     dt = ds / v;
                 } else {
-                    throw new RuntimeException("Couldn't determine a dt to integrate because robot is too still after the initial pose");
+                    throw new RuntimeException(
+                            "Couldn't determine a dt to integrate because robot is too still after the initial pose");
                 }
             }
             t += dt;
@@ -342,17 +378,10 @@ public class TrajectoryGenerator {
 
             v = constrainedState.maxVelocity;
             s = constrainedState.distance;
-            timedStates.add(
-                new TimedState<S>(
-                    constrainedState.state,
-                    t,
-                    reversed ? -v : v,
-                    reversed ? -accel : accel
-                )
-            );
+            timedStates.add(new TimedState<S>(constrainedState.state, t, reversed ? -v : v, reversed ? -accel : accel));
         }
 
         return new TimedTrajectory<S>(timedStates, reversed);
     }
-    
+
 }

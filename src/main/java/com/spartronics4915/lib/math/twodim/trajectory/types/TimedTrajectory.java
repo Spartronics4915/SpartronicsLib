@@ -52,6 +52,13 @@ public class TimedTrajectory<S extends State<S>> extends Trajectory<TimedTraject
         return getLastState().time;
     }
 
+    /**
+     * @return Total time interval taken by the trajectory, in seconds.
+     */
+    public double getTotalTime() {
+        return getLastInterpolant() - getFirstInterpolant();
+    }
+
     public static class TimedState<S extends State<S>> implements State<TimedState<S>> {
         public final S state;
         /** Time in seconds */

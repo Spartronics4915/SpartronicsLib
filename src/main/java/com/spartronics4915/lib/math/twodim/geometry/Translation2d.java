@@ -47,11 +47,11 @@ public class Translation2d implements Interpolable<Translation2d> {
         return mX * mX + mY * mY;
     }
 
-    public double x() {
+    public double getX() {
         return mX;
     }
 
-    public double y() {
+    public double getY() {
         return mY;
     }
 
@@ -73,7 +73,7 @@ public class Translation2d implements Interpolable<Translation2d> {
      * @return This translation rotated by rotation.
      */
     public Translation2d rotateBy(final Rotation2d rotation) {
-        return new Translation2d(mX * rotation.cos() - mY * rotation.sin(), mX * rotation.sin() + mY * rotation.cos());
+        return new Translation2d(mX * rotation.getCos() - mY * rotation.getSin(), mX * rotation.getSin() + mY * rotation.getCos());
     }
 
     public Rotation2d direction() {
@@ -108,7 +108,7 @@ public class Translation2d implements Interpolable<Translation2d> {
     }
 
     public boolean epsilonEquals(final Translation2d other, double epsilon) {
-        return Util.epsilonEquals(x(), other.x(), epsilon) && Util.epsilonEquals(y(), other.y(), epsilon);
+        return Util.epsilonEquals(getX(), other.getX(), epsilon) && Util.epsilonEquals(getY(), other.getY(), epsilon);
     }
 
     @Override
@@ -143,7 +143,7 @@ public class Translation2d implements Interpolable<Translation2d> {
     // This class could implement TrajectoryState because it has a distance
     // method, but you would never use a Translation2d as a TrajectoryState.
     // The above applies to Rotation2d and Twist2d as well.
-    public double distance(final Translation2d other) {
+    public double getDistance(final Translation2d other) {
         return inverse().translateBy(other).norm();
     }
 
@@ -151,7 +151,7 @@ public class Translation2d implements Interpolable<Translation2d> {
     public boolean equals(final Object other) {
         if (other == null || !(other instanceof Translation2d))
             return false;
-        return distance((Translation2d) other) < Util.kEpsilon;
+        return getDistance((Translation2d) other) < Util.kEpsilon;
     }
 
     public Translation2d getTranslation() {
