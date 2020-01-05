@@ -29,7 +29,9 @@ public class TestObjectFinder {
     private long mLastResetTime = 0;
 
     private int mEdgeDetectorValue = 1;
-    private int mNumVotesNeeded = 3;
+    private int mNumVotesNeeded = 5;
+
+    private final TargetTracker mTargetTracker = new TargetTracker();
 
     @Test
     public void testGeom() {
@@ -56,7 +58,7 @@ public class TestObjectFinder {
     @Test
     public void interactivePointcloudTest() {
         final ObjectFinder finder = new ObjectFinder(0.01);
-        final double circleRadiusMeters = Units.inchesToMeters(9);
+        final double circleRadiusMeters = Units.inchesToMeters(3.5);
 
         var pointCloudCanvas = new Canvas() {
             @Override
@@ -74,12 +76,17 @@ public class TestObjectFinder {
                         int circleDiameterCentimeters = (int) Math.round(circleRadiusMeters * 100.0 * 2.0);
                         // var centers = finder.findSquares(pointcloud, new Translation2d(), 0.28, mNumVotesNeeded, 3, 0.3);
                         var centers = finder.findCircles(mPointcloud, circleRadiusMeters, mNumVotesNeeded, 3);
-                        for (Translation2d center : centers) {
+                        var center = mTargetTracker.update(centers);
+                        if (center == null) {
+                            System.out.println("No target found");
+                            return;
+                        }
+                        // for (Translation2d center : centers) {
                             System.out.println(center);
                             g.setColor(Color.BLUE);
                             g.drawOval(toScreenCoordinates(center.getX() - circleRadiusMeters, true), toScreenCoordinates(center.getY() - circleRadiusMeters, false), circleDiameterCentimeters, circleDiameterCentimeters);
-                            break;
-                        }
+                            // break;
+                        // }
 
                         g.drawString("Edge: " + mEdgeDetectorValue + ", Votes: " + mNumVotesNeeded, 10, 10);
                     }
@@ -119,6 +126,7 @@ public class TestObjectFinder {
 
             @Override
             public void keyReleased(KeyEvent k) {
+                System.out.println(k.getKeyChar());
                 if (k.getKeyChar() == '-' || k.getKeyChar() == '+') {
                     double toAdd = (k.getKeyChar() == '+' ? 1 : -1);
 
