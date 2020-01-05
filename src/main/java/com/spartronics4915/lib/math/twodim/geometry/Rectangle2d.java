@@ -1,6 +1,7 @@
 package com.spartronics4915.lib.math.twodim.geometry;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import com.spartronics4915.lib.math.Util;
 
@@ -94,12 +95,11 @@ public class Rectangle2d {
         if (Util.epsilonEquals(0, translation.getX()) && Util.epsilonEquals(0, translation.getY()))
             return false;
         // Check if it's even in range
-        Rectangle2d boxRect = new Rectangle2d(
-            rectangle.getTopLeft(), rectangle.getBottomRight(),
-            rectangle.getTopLeft().translateBy(translation), rectangle.getBottomRight().translateBy(translation)
-        );
-        if (!boxRect.isIn(this)) return false;
-        
+        Rectangle2d boxRect = new Rectangle2d(rectangle.getTopLeft(), rectangle.getBottomRight(),
+                rectangle.getTopLeft().translateBy(translation), rectangle.getBottomRight().translateBy(translation));
+        if (!boxRect.isIn(this))
+            return false;
+
         // AABB collision
         // Calculate distances
         double xInvEntry, xInvExit, yInvEntry, yInvExit;
@@ -137,5 +137,22 @@ public class Rectangle2d {
         double exitTime = Math.min(xExit, yExit);
 
         return entryTime <= exitTime && (xEntry >= 0.0 || yEntry >= 0.0) && (xEntry < 1.0 || yEntry < 1.0);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
+        if (!(o instanceof Rectangle2d))
+            return false;
+        return this.mX == ((Rectangle2d) o).mX && this.mY == ((Rectangle2d) o).mY
+                && this.mWidth == ((Rectangle2d) o).mWidth && this.mHeight == ((Rectangle2d) o).mHeight;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mX, mY, mWidth, mHeight);
     }
 }
