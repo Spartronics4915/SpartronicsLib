@@ -12,12 +12,12 @@ This is Spartronics FRC Team 4915's year-independent library. Features include:
 Click on the below thumbnails to play the videos.
 
 ### LIDAR object detection on the 2020 Power Cell gamepieces
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=fzdhYzALs-o" target="_blank"><img src="http://img.youtube.com/vi/fzdhYzALs-o/0.jpg" alt="Thumbnail and link for a video demoing detecting power cells with LIDAR" width="800" height="450" border="10" /></a>
+<a href="https://raw.githubusercontent.com/Spartronics4915/SpartronicsLib/master/readme_images/lidar_demo.gif" target="_blank"><img src="http://img.youtube.com/vi/fzdhYzALs-o/0.jpg" alt="Thumbnail and link for a video demoing detecting power cells with LIDAR" width="800" height="450" border="10" /></a>
 
 ### Generating a trajectory on the fly to an object detected with LIDAR
 _Odometry is provided by the V-SLAM camera. The robot drive to the center of the ball.__
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=4HTlq_ENjXw" target="_blank"><img src="http://img.youtube.com/vi/4HTlq_ENjXw/maxresdefault.jpg" alt="Thumbnail and link for a video demoing the robot driving to a ball detected with LIDAR, using V-SLAM for odometry during trajectory following." width="800" height="450" border="10" /></a>
+<a href="https://raw.githubusercontent.com/Spartronics4915/SpartronicsLib/master/readme_images/path_to_ball.gif" target="_blank"><img src="http://img.youtube.com/vi/4HTlq_ENjXw/maxresdefault.jpg" alt="Thumbnail and link for a video demoing the robot driving to a ball detected with LIDAR, using V-SLAM for odometry during trajectory following." width="800" height="450" border="10" /></a>
 
 ## Using SpartronicsLib
 First, add the JitPack repository to your `build.gradle`:
