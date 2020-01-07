@@ -17,7 +17,7 @@ Click on the below thumbnails to play the videos.
 ### Generating a trajectory on the fly to an object detected with LIDAR
 _Odometry is provided by the V-SLAM camera. The robot drive to the center of the ball.__
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=4HTlq_ENjXw" target="_blank"><img src="https://raw.githubusercontent.com/Spartronics4915/SpartronicsLib/master/readme_images/path_to_ball.gif" alt="Thumbnail and link for a video demoing the robot driving to a ball detected with LIDAR, using V-SLAM for odometry during trajectory following." width="800" height="450" border="10" /></a>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=4HTlq_ENjXw" target="_blank"><img src="https://raw.githubusercontent.com/Spartronics4915/SpartronicsLib/master/readme_images/path_to_ball.gif" alt="Thumbnail and link for a video demoing the robot driving to a ball detected with LIDAR, using V-SLAM for odometry during trajectory following." width="480" height="270" border="10" /></a>
 
 ## Using SpartronicsLib
 First, add the JitPack repository to your `build.gradle`:
