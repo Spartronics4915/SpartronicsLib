@@ -20,6 +20,7 @@ _Odometry is provided by the V-SLAM camera. The robot drive to the center of the
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=4HTlq_ENjXw" target="_blank"><img src="https://raw.githubusercontent.com/Spartronics4915/SpartronicsLib/master/readme_images/path_to_ball.gif" alt="Thumbnail and link for a video demoing the robot driving to a ball detected with LIDAR, using V-SLAM for odometry during trajectory following." width="480" height="270" border="10" /></a>
 
 ## Using SpartronicsLib
+### For other teams
 First, add the JitPack repository to your `build.gradle`:
 ```groovy
 repositories {
@@ -33,6 +34,10 @@ dependencies {
     implementation "com.github.Spartronics4915:SpartronicsLib:master-SNAPSHOT"
 }
 ```
+### For Spartronics
+Although the above approach makes it easy to share, separate, and track commits to SpartronicsLib, it's not sufficiently beginner-proof. For this reason, SpartronicsLib is copied into our year-specific repo for your use, and then copied out with the Git history at the end of the year. This means that beginners don't need to remember to commit and push in two places, to use `--include-build`, or to pass `--refresh-dependencies`, or to do anything else special.
+
+Although this "copy" approach is kludgy and painful, it's the price we have to pay to reduce footguns that cause issues during competition. 
 
 ## Contributing to SpartronicsLib
 When adding features to SpartronicsLib, it is reccomended that you include a unit test. The unit testing is very easy, and in many cases it means that you don't need to make another project or have a robot to test your feature.
