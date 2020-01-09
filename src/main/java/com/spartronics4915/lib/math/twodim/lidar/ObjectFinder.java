@@ -1,5 +1,6 @@
 package com.spartronics4915.lib.math.twodim.lidar;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -23,9 +24,13 @@ import edu.wpi.cscore.CameraServerJNI;
 public class ObjectFinder {
 
     static {
-            // This is so libopencv_javaVERSION.so (where version is the 3-digit opencv
-            // version) gets loaded.
+        // This is so libopencv_javaVERSION.so (where version is the 3-digit opencv
+        // version) gets loaded.
+        try {
             CameraServerJNI.forceLoad();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /** Side length of each binning square in meters */

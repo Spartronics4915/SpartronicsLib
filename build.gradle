@@ -1,7 +1,6 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2019.4.1"
-    id "edu.wpi.first.NativeUtils" version "2.1.2"
+    id "edu.wpi.first.GradleRIO" version "2020.1.2"
     id "maven"
     id "maven-publish"
 }
@@ -22,18 +21,24 @@ repositories {
 }
 
 dependencies {
-    compile wpi.deps.wpilib()
-    compile wpi.deps.vendor.java()
+    implementation wpi.deps.wpilib()
+    nativeZip wpi.deps.wpilibJni(wpi.platforms.roborio)
+    nativeDesktopZip wpi.deps.wpilibJni(wpi.platforms.desktop)
 
-    compile("com.github.Oblarg:command-rewrite-jitpack:1.5.1")
-    compile("gov.nist.math:jama:1.0.3")
-    compile("org.ejml:ejml-simple:0.38")
-    compile("org.apache.commons:commons-math3:3.6.1")
-    compile("com.fazecast:jSerialComm:2.4.1")
+    implementation wpi.deps.vendor.java()
+    nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
+    nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
 
-    testCompile("org.knowm.xchart:xchart:3.2.2")
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.3.2")
+    implementation("gov.nist.math:jama:1.0.3")
+    implementation("org.ejml:ejml-simple:0.38")
+    implementation("org.apache.commons:commons-math3:3.6.1")
+    implementation("com.fazecast:jSerialComm:2.4.1")
+
+    testImplementation("org.knowm.xchart:xchart:3.2.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.2")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")
+
+    simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
 }
 
 publishing {
@@ -41,7 +46,7 @@ publishing {
         maven(MavenPublication) {
             groupId = "com.spartronics4915"
             artifactId = "SpartronicsLib"
-            version = "2019.1.0"
+            version = "2020.1.0"
 
             from components.java
         }

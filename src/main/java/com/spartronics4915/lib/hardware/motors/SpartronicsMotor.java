@@ -8,7 +8,7 @@ public interface SpartronicsMotor {
     SpartronicsEncoder getEncoder();
 
     /**
-     * @return A {@link SensorModel} that converts between meters and meters.
+     * @return A {@link SensorModel} that converts between native units and meters.
      */
     SensorModel getSensorModel();
 
