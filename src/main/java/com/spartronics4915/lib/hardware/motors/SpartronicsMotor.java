@@ -110,6 +110,10 @@ public interface SpartronicsMotor {
     void setVelocity(double velocityMetersPerSecond, double arbitraryFeedForwardVolts);
 
     /**
+     * Sets the PD gains for the built in velocity PID controller.
+     */
+    void setVelocityGains(double kP, double kD);
+    /**
      * Sets the PID gains for the built in velocity PID controller.
      */
     void setVelocityGains(double kP, double kI, double kD, double kF);
@@ -120,7 +124,11 @@ public interface SpartronicsMotor {
      * @param positionMeters Target position in meters.
      */
     void setPosition(double positionMeters);
-
+    
+    /**
+     * Sets the PID gains for the built in position PID controller.
+     */
+    void setPositionGains(double kP, double kD);
     /**
      * Sets the PID gains for the built in position PID controller.
      */

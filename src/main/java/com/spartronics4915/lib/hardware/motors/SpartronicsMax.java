@@ -32,12 +32,6 @@
 
 package com.spartronics4915.lib.hardware.motors;
 
-import com.ctre.phoenix.ErrorCode;
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.DemandType;
-import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -49,10 +43,7 @@ public class SpartronicsMax implements SpartronicsMotor {
     private static final int kVelocitySlotIdx = 0;
     private static final int kPositionSlotIdx = 1;
 
-    // This conversion could go into the sensor model, but the per 100ms thing is
-    // Talon-only, so it's not worth it.
-    private static final double kMetersPer100msToMetersPerSecond = 10;
-    private static final double kMetersPerSecondToMetersPer100ms = 1 / kMetersPer100msToMetersPerSecond;
+    private final double kRPMtoRPS = 1/60;
 
     private CANSparkMax mSparkMax;
     private SpartronicsEncoder mEncoder;
@@ -73,7 +64,7 @@ public class SpartronicsMax implements SpartronicsMotor {
 
         @Override
         public double getVelocity() {
-            return mSensorModel.toMeters(mSparkMax.getEncoder().getVelocity()) * kMetersPer100msToMetersPerSecond;
+            return mSensorModel.toMeters(mSparkMax.getEncoder().getVelocity());
         }
 
         @Override
@@ -95,6 +86,7 @@ public class SpartronicsMax implements SpartronicsMotor {
         mSparkMax = spark;
         mSensorModel = sensorModel;
 
+        mSparkMax.getEncoder().setVelocityConversionFactor(kRPMtoRPS);
 
         // mSparkMax.configFactoryDefault();
         mSparkMax.enableVoltageCompensation(mVoltageCompSaturation);
@@ -144,25 +136,25 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public double getMotionProfileCruiseVelocity() {
-        return mSensorModel.toMeters(mMotionProfileCruiseVelocity) * kMetersPer100msToMetersPerSecond;
+        return mSensorModel.toMeters(mMotionProfileCruiseVelocity);
     }
 
     @Override
     public void setMotionProfileCruiseVelocity(double velocityMetersPerSecond) { // Set to slot
         mMotionProfileCruiseVelocity = mSensorModel
-                .toNativeUnits(velocityMetersPerSecond * kMetersPerSecondToMetersPer100ms);
+                .toNativeUnits(velocityMetersPerSecond);
         mSparkMax.getPIDController().setSmartMotionMaxVelocity((int) mMotionProfileCruiseVelocity, kVelocitySlotIdx);
     }
 
     @Override
     public double getMotionProfileMaxAcceleration() {
-        return mSensorModel.toMeters(mMotionProfileAcceleration) * kMetersPer100msToMetersPerSecond;
+        return mSensorModel.toMeters(mMotionProfileAcceleration);
     }
 
     @Override
     public void setMotionProfileMaxAcceleration(double accelerationMetersPerSecondSq) {
         mMotionProfileAcceleration = mSensorModel
-                .toNativeUnits(accelerationMetersPerSecondSq * kMetersPerSecondToMetersPer100ms);
+                .toNativeUnits(accelerationMetersPerSecondSq);
         mSparkMax.getPIDController().setSmartMotionMaxAccel((int) mMotionProfileAcceleration, kVelocitySlotIdx);
     }
 
@@ -176,7 +168,8 @@ public class SpartronicsMax implements SpartronicsMotor {
         if (mLastControlMode != ControlType.kDutyCycle) {
             mLastControlMode = ControlType.kDutyCycle;
         }
-        mSparkMax.getPIDController().setReference(dutyCycle, ControlType.kDutyCycle);
+        mSparkMax.getPIDController().setReference(dutyCycle, ControlType.kDutyCycle, 0, 
+        arbitraryFeedForwardVolts / mVoltageCompSaturation);
     }
 
     @Override
@@ -190,8 +183,14 @@ public class SpartronicsMax implements SpartronicsMotor {
             mLastControlMode = ControlType.kVelocity;
         }
 
-        double velocityNative = mSensorModel.toNativeUnits(velocityMetersPerSecond * kMetersPerSecondToMetersPer100ms);
-        mSparkMax.getPIDController().setReference(velocityNative, ControlType.kVelocity);
+        double velocityNative = mSensorModel.toNativeUnits(velocityMetersPerSecond);
+        mSparkMax.getPIDController().setReference(velocityNative, ControlType.kVelocity, kVelocitySlotIdx,
+        arbitraryFeedForwardVolts / mVoltageCompSaturation);
+    }
+
+    @Override
+    public void setVelocityGains(double kP, double kD) {
+        setVelocityGains(kP, 0, kD, 0);
     }
 
     @Override
@@ -209,7 +208,12 @@ public class SpartronicsMax implements SpartronicsMotor {
         }
 
         positionMeters = mSensorModel.toNativeUnits(positionMeters);
-        mSparkMax.getPIDController().setReference(positionMeters, mUseMotionProfileForPosition ? ControlType.kSmartMotion : ControlType.kPosition);
+        mSparkMax.getPIDController().setReference(positionMeters, mUseMotionProfileForPosition ? ControlType.kSmartMotion : ControlType.kPosition, kPositionSlotIdx);
+    }
+
+    @Override
+    public void setPositionGains(double kP, double kD) {
+        setPositionGains(kP, 0, kD, 0);
     }
 
     @Override
@@ -236,7 +240,7 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public void setNeutral() {
-        mSparkMax.getPIDController().setReference(0.0, ControlType.kDutyCycle);
+        mSparkMax.getPIDController().setReference(0.0, ControlType.kDutyCycle, 0);
     }
 
 }
