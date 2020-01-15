@@ -58,17 +58,6 @@ public abstract class SpartronicsSubsystem implements Subsystem
         SmartDashboard.putString(mName + "/Status", mInitialized ? "OK" : "ERROR");
     }
 
-    // broadcast methods are for smartdashboard with conventionalized keys
-    public void dashboardPutState(String state)
-    {
-        SmartDashboard.putString(mName + "/State", state);
-    }
-
-    public void dashboardPutWantedState(String state)
-    {
-        SmartDashboard.putString(mName + "/WantedState", state);
-    }
-
     public void dashboardPutString(String nm, String value)
     {
         SmartDashboard.putString(mName + "/" + nm, value);
