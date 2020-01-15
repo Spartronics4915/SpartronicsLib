@@ -81,8 +81,10 @@ public class RobotStateEstimator extends SpartronicsSubsystem
     }
 
     @Override
-    public void outputTelemetry()
+    public void periodic()
     {
+        super.periodic();
+
         final RobotStateMap.State estate = mEncoderStateMap.getLatestState();
         Pose2d epose = estate.pose;
         SmartDashboard.putString("RobotState/encoderPose",

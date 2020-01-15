@@ -130,19 +130,12 @@ public abstract class SpartronicsSubsystem implements Subsystem
         Logger.debug(this.getClassName() + " " + msg);
     }
 
-    /**
-     * Put important network tables/logger outputs here. This is usually better than
-     * putting calls into a command.
-     */
-    public abstract void outputTelemetry();
-
     public void zeroSensors()
     {
     }
 
     @Override
     public void periodic() {
-        outputTelemetry();
         dashboardPutString("currentCommand", CommandScheduler.getInstance().requiring(this).getName());
     }
 }
