@@ -24,6 +24,13 @@ public class SensorModel {
         return new SensorModel(nativeUnitsToCustomUnitsMultiplier);
     }
 
+    /**
+     * @param nativeUnitsPerRevolution The number of custom units per wheel revolution.
+     */
+    public static SensorModel toRadians(double nativeUnitsPerRevolution) {
+        return new SensorModel((1 / nativeUnitsPerRevolution) * 2 * Math.PI);
+    }
+
     private SensorModel(double nativeUnitsToMetersMultiplier) {
         mToCustomUnitsMultiplier = nativeUnitsToMetersMultiplier;
     }
