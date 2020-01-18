@@ -147,9 +147,7 @@ public class SpartronicsSRX implements SpartronicsMotor {
 
     @Override
     public void setDutyCycle(double dutyCycle, double arbitraryFeedForwardVolts) {
-        if (mLastControlMode != ControlMode.PercentOutput) {
-            mLastControlMode = ControlMode.PercentOutput;
-        }
+        mLastControlMode = ControlMode.PercentOutput;
         mTalonSRX.set(ControlMode.PercentOutput, dutyCycle, DemandType.ArbitraryFeedForward,
                 arbitraryFeedForwardVolts / mVoltageCompSaturation);
     }
@@ -172,6 +170,11 @@ public class SpartronicsSRX implements SpartronicsMotor {
     }
 
     @Override
+    public void setVelocityGains(double kP, double kD) {
+        setVelocityGains(kP, 0, kD, 0);
+    }
+
+    @Override
     public void setVelocityGains(double kP, double kI, double kD, double kF) {
         mTalonSRX.config_kP(kVelocitySlotIdx, kP);
         mTalonSRX.config_kI(kVelocitySlotIdx, kI);
@@ -188,6 +191,11 @@ public class SpartronicsSRX implements SpartronicsMotor {
 
         positionMeters = mSensorModel.toNativeUnits(positionMeters);
         mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, positionMeters);
+    }
+
+    @Override
+    public void setPositionGains(double kP, double kD) {
+        setPositionGains(kP, 0, kD, 0);
     }
 
     @Override
