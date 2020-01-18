@@ -63,12 +63,12 @@ public class SpartronicsMax implements SpartronicsMotor {
 
         @Override
         public double getVelocity() {
-            return mSensorModel.toMeters(mSparkMax.getEncoder().getVelocity());
+            return mSensorModel.toCustomUnits(mSparkMax.getEncoder().getVelocity());
         }
 
         @Override
         public double getPosition() {
-            return mSensorModel.toMeters(mSparkMax.getEncoder().getPosition());
+            return mSensorModel.toCustomUnits(mSparkMax.getEncoder().getPosition());
         }
 
         @Override
@@ -136,7 +136,7 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public double getMotionProfileCruiseVelocity() {
-        return mSensorModel.toMeters(mMotionProfileCruiseVelocity);
+        return mSensorModel.toCustomUnits(mMotionProfileCruiseVelocity);
     }
 
     @Override
@@ -148,7 +148,7 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public double getMotionProfileMaxAcceleration() {
-        return mSensorModel.toMeters(mMotionProfileAcceleration);
+        return mSensorModel.toCustomUnits(mMotionProfileAcceleration);
     }
 
     @Override
