@@ -85,8 +85,9 @@ public class SpartronicsMax implements SpartronicsMotor {
     public SpartronicsMax(CANSparkMax spark, SensorModel sensorModel) {
         mSparkMax = spark;
         mSensorModel = sensorModel;
-
-        mSparkMax.getEncoder().setVelocityConversionFactor(kRPMtoRPS);
+        mEncoder = new SpartronicsMaxEncoder();
+        mSparkMax.getEncoder().setPosition(0);
+        mSparkMax.getEncoder().setVelocityConversionFactor(kRPMtoRPS); // Set conversion factor.
 
         // mSparkMax.configFactoryDefault();
         mSparkMax.enableVoltageCompensation(mVoltageCompSaturation);
