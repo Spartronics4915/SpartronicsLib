@@ -196,8 +196,8 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public void setPosition(double positionMeters) {
-        positionMeters = mSensorModel.toNativeUnits(positionMeters);
-        mSparkMax.getPIDController().setReference(positionMeters, mUseMotionProfileForPosition ? ControlType.kSmartMotion : ControlType.kPosition, kPositionSlotIdx);
+        double positionNativeUnits = mSensorModel.toNativeUnits(positionMeters);
+        mSparkMax.getPIDController().setReference(positionNativeUnits, mUseMotionProfileForPosition ? ControlType.kSmartMotion : ControlType.kPosition, kPositionSlotIdx);
     }
 
     @Override

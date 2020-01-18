@@ -189,8 +189,8 @@ public class SpartronicsSRX implements SpartronicsMotor {
             mLastControlMode = ControlMode.Position;
         }
 
-        positionMeters = mSensorModel.toNativeUnits(positionMeters);
-        mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, positionMeters);
+        double positionNative = mSensorModel.toNativeUnits(positionMeters);
+        mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, positionNative);
     }
 
     @Override
