@@ -27,6 +27,8 @@
 | and a FREE Epic Level Champion as part of the  |
 | new players program, courtesy of course of the |
 | RAID: Shadow Legends™ devs.                    |
+| DISCLAIMER: Not actually sponsored by RAID:    |
+| Shadow Legends                                 |
 \************************************************/
 
 
@@ -36,7 +38,6 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.spartronics4915.lib.util.Logger;
 
 public class SpartronicsMax implements SpartronicsMotor {
 
@@ -57,8 +58,6 @@ public class SpartronicsMax implements SpartronicsMotor {
     /** Native units/sec^2, converted to meters on get and set */
     private double mMotionProfileAcceleration = 0.0;
     private boolean mUseMotionProfileForPosition = false;
-
-    private ControlType mLastControlMode = null;
 
     public class SpartronicsMaxEncoder implements SpartronicsEncoder {
 
@@ -100,7 +99,7 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public double getVoltageOutput() {
-        return mSparkMax.getBusVoltage() * mSparkMax.get();
+        return mSparkMax.getBusVoltage() * mSparkMax.getAppliedOutput();
     }
 
     @Override
@@ -166,11 +165,8 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public void setDutyCycle(double dutyCycle, double arbitraryFeedForwardVolts) {
-        if (mLastControlMode != ControlType.kDutyCycle) {
-            mLastControlMode = ControlType.kDutyCycle;
-        }
         mSparkMax.getPIDController().setReference(dutyCycle, ControlType.kDutyCycle, 0, 
-        arbitraryFeedForwardVolts / mVoltageCompSaturation);
+        arbitraryFeedForwardVolts);
     }
 
     @Override
@@ -180,13 +176,9 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public void setVelocity(double velocityMetersPerSecond, double arbitraryFeedForwardVolts) {
-        if (mLastControlMode != ControlType.kVelocity) {
-            mLastControlMode = ControlType.kVelocity;
-        }
-
         double velocityNative = mSensorModel.toNativeUnits(velocityMetersPerSecond);
         mSparkMax.getPIDController().setReference(velocityNative, ControlType.kVelocity, kVelocitySlotIdx,
-        arbitraryFeedForwardVolts / mVoltageCompSaturation);
+        arbitraryFeedForwardVolts);
     }
 
     @Override
@@ -204,10 +196,6 @@ public class SpartronicsMax implements SpartronicsMotor {
 
     @Override
     public void setPosition(double positionMeters) {
-        if (mLastControlMode != ControlType.kPosition) {
-            mLastControlMode = ControlType.kPosition;
-        }
-
         positionMeters = mSensorModel.toNativeUnits(positionMeters);
         mSparkMax.getPIDController().setReference(positionMeters, mUseMotionProfileForPosition ? ControlType.kSmartMotion : ControlType.kPosition, kPositionSlotIdx);
     }

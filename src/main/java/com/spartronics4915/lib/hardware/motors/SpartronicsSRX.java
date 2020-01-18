@@ -147,9 +147,7 @@ public class SpartronicsSRX implements SpartronicsMotor {
 
     @Override
     public void setDutyCycle(double dutyCycle, double arbitraryFeedForwardVolts) {
-        if (mLastControlMode != ControlMode.PercentOutput) {
-            mLastControlMode = ControlMode.PercentOutput;
-        }
+        mLastControlMode = ControlMode.PercentOutput;
         mTalonSRX.set(ControlMode.PercentOutput, dutyCycle, DemandType.ArbitraryFeedForward,
                 arbitraryFeedForwardVolts / mVoltageCompSaturation);
     }
