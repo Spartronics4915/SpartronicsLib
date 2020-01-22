@@ -37,12 +37,12 @@ public class SpartronicsSRX implements SpartronicsMotor {
 
         @Override
         public double getVelocity() {
-            return mSensorModel.toMeters(mTalonSRX.getSelectedSensorVelocity()) * kMetersPer100msToMetersPerSecond;
+            return mSensorModel.toCustomUnits(mTalonSRX.getSelectedSensorVelocity()) * kMetersPer100msToMetersPerSecond;
         }
 
         @Override
         public double getPosition() {
-            return mSensorModel.toMeters(mTalonSRX.getSelectedSensorPosition());
+            return mSensorModel.toCustomUnits(mTalonSRX.getSelectedSensorPosition());
         }
 
         @Override
@@ -118,7 +118,7 @@ public class SpartronicsSRX implements SpartronicsMotor {
 
     @Override
     public double getMotionProfileCruiseVelocity() {
-        return mSensorModel.toMeters(mMotionProfileCruiseVelocity) * kMetersPer100msToMetersPerSecond;
+        return mSensorModel.toCustomUnits(mMotionProfileCruiseVelocity) * kMetersPer100msToMetersPerSecond;
     }
 
     @Override
@@ -130,7 +130,7 @@ public class SpartronicsSRX implements SpartronicsMotor {
 
     @Override
     public double getMotionProfileMaxAcceleration() {
-        return mSensorModel.toMeters(mMotionProfileAcceleration) * kMetersPer100msToMetersPerSecond;
+        return mSensorModel.toCustomUnits(mMotionProfileAcceleration) * kMetersPer100msToMetersPerSecond;
     }
 
     @Override
@@ -189,8 +189,8 @@ public class SpartronicsSRX implements SpartronicsMotor {
             mLastControlMode = ControlMode.Position;
         }
 
-        positionMeters = mSensorModel.toNativeUnits(positionMeters);
-        mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, positionMeters);
+        double positionNative = mSensorModel.toNativeUnits(positionMeters);
+        mTalonSRX.set(mUseMotionProfileForPosition ? ControlMode.MotionMagic : ControlMode.Position, positionNative);
     }
 
     @Override
