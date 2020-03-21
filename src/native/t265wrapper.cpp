@@ -34,7 +34,7 @@ std::mutex tbcMutex;
  *   Camera X -> Robot Y * -1
  *   Camera Quaternion -> Counter-clockwise Euler angles (currently just yaw)
  * 
- * For ease of use, all coodrinates that come out of this wrapper are in this "robot standard" coordinate system.
+ * For ease of use, all coordinates that come out of this wrapper are in this "robot standard" coordinate system.
  */
 
 // We do this so we don't have to fiddle with files
@@ -160,12 +160,12 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
 
         devAndSensors = new deviceAndSensors(pipeline, odom, pose, globalThis);
 
-        auto consumerCallback = [jvm, devAndSensors](const rs2::frame &frame) {
+       auto consumerCallback = [jvm, devAndSensors](const rs2::frame &frame) {
             JNIEnv *env = nullptr;
             try
             {
                 // Attaching the thread is expensive... TODO: Cache env?
-                int error = jvm->AttachCurrentThread((void **)&env, nullptr);
+                int error = jvm->AttachCurrentThread(&env, nullptr);
                 if (error)
                     throw std::runtime_error("Couldn't attach callback thread to jvm");
 
@@ -173,12 +173,17 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                 // rotation is a quaternion so we must convert to an euler angle (yaw)
                 auto yaw = 2 * atan2f(poseData.rotation.y, poseData.rotation.w);
 
-                auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFFFI)V");
+                auto callbackMethodID = env->GetMethodID(holdingClass, "consumePoseUpdate", "(FFFFFFI)V");
                 if (!callbackMethodID)
                     throw std::runtime_error("consumePoseUpdate method doesn't exist");
 
                 auto velocityMagnitude = hypotf(-poseData.velocity.z, -poseData.velocity.x);
-                env->CallVoidMethod(devAndSensors->globalThis, callbackMethodID, -poseData.translation.z, -poseData.translation.x, yaw, velocityMagnitude, poseData.angular_velocity.y, poseData.tracker_confidence);
+                env->CallVoidMethod(
+                        devAndSensors->globalThis, callbackMethodID,
+                        -poseData.translation.z, -poseData.translation.x, yaw,
+                        -poseData.velocity.z, -poseData.velocity.x, poseData.angular_velocity.y,
+                        poseData.tracker_confidence
+                );
 
                 std::lock_guard<std::mutex> lock(devAndSensors->frameNumMutex);
                 devAndSensors->lastRecvdFrameNum = frame.get_frame_number();
