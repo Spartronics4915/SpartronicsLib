@@ -9,11 +9,9 @@ import java.util.List;
 
 public class DriveCharacterization
 {
-
     public static class CharacterizationConstants
     {
-
-        public double ks; //voltage needed to break static friction
+        public double ks; // voltage needed to break static friction
         public double kv;
         public double ka;
     }
@@ -54,7 +52,8 @@ public class DriveCharacterization
         public final double leftVoltage;
         public final double rightVoltage;
 
-        public CurvatureDataPoint(double linearVelocity, double angularVelocity, double leftVoltage, double rightVoltage)
+        public CurvatureDataPoint(double linearVelocity, double angularVelocity, double leftVoltage,
+            double rightVoltage)
         {
             this.linearVelocity = linearVelocity;
             this.angularVelocity = angularVelocity;
@@ -63,7 +62,8 @@ public class DriveCharacterization
         }
     }
 
-    public static CharacterizationConstants characterizeDrive(List<VelocityDataPoint> velocityData, List<AccelerationDataPoint> accelerationData)
+    public static CharacterizationConstants characterizeDrive(List<VelocityDataPoint> velocityData,
+        List<AccelerationDataPoint> accelerationData)
     {
         CharacterizationConstants rv = getVelocityCharacterization(getVelocityData(velocityData));
         getAccelerationCharacterization(getAccelerationData(accelerationData, rv), rv);
@@ -74,7 +74,7 @@ public class DriveCharacterization
      * From "Practical Guide to State Space Control" section 4.5.2. We're solving
      * for I (also known as J) in rma=Iα. Jared Russell has posted a similar
      * equation that you can use to solve for J, but we're not using it.
-     * 
+     *
      * @param linearAccelerationData  in rad/s^2
      * @param angularAccelerationData in rad/s^2
      * @param wheelRadius             in m
@@ -82,11 +82,13 @@ public class DriveCharacterization
      * @return moment of inertia (angular inertia) in kg m^2
      */
     public static double calculateAngularInertia(List<AccelerationDataPoint> linearAccelerationData,
-            List<AccelerationDataPoint> angularAccelerationData, double wheelRadius, double robotMass)
+        List<AccelerationDataPoint> angularAccelerationData, double wheelRadius, double robotMass)
     {
         // We currently throw out samples if things don't match up... FIXME?
-        int smallestLength = Math.min(angularAccelerationData.size(), linearAccelerationData.size());
-        Logger.debug("Linear accel data has " + linearAccelerationData.size() + " samples, angular has " + angularAccelerationData.size());
+        int smallestLength = Math.min(angularAccelerationData.size(),
+            linearAccelerationData.size());
+        Logger.debug("Linear accel data has " + linearAccelerationData.size()
+            + " samples, angular has " + angularAccelerationData.size());
 
         double[] x = new double[smallestLength];
         double[] y = new double[smallestLength];
@@ -116,7 +118,8 @@ public class DriveCharacterization
         return constants;
     }
 
-    private static CharacterizationConstants getAccelerationCharacterization(double[][] points, CharacterizationConstants velocityChacterization)
+    private static CharacterizationConstants getAccelerationCharacterization(double[][] points,
+        CharacterizationConstants velocityChacterization)
     {
         if (points == null)
         {
@@ -152,7 +155,8 @@ public class DriveCharacterization
         return output;
     }
 
-    private static double[][] getAccelerationData(List<AccelerationDataPoint> input, CharacterizationConstants constants)
+    private static double[][] getAccelerationData(List<AccelerationDataPoint> input,
+        CharacterizationConstants constants)
     {
         double[][] output = new double[input.size()][2];
         for (int i = 0; i < input.size(); ++i)

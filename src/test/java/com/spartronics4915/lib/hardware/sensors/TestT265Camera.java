@@ -7,9 +7,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
-import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
-import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.geometry.Transform2d;
+import edu.wpi.first.wpilibj.geometry.Twist2d;
 import com.spartronics4915.lib.hardware.sensors.T265Camera.CameraUpdate;
 import com.spartronics4915.lib.util.Logger;
 
@@ -33,10 +34,10 @@ public class TestT265Camera
         T265Camera cam = null;
         try
         {
-            cam = new T265Camera(new Pose2d(), 0);
+            cam = new T265Camera(new Transform2d(), 0);
 
             // Just make sure this doesn't throw
-            cam.sendOdometry(new Twist2d(0, 0, new Rotation2d()));
+            cam.sendOdometry(new Twist2d(0, 0, 0));
 
             cam.start((CameraUpdate update) ->
             {
@@ -66,7 +67,7 @@ public class TestT265Camera
             cam.free();
 
             // Try making a new camera and importing the map
-            cam = new T265Camera(new Pose2d(), 0f, mapPath.toString());
+            cam = new T265Camera(new Transform2d(), 0f, mapPath.toString());
 
             Logger.debug("Map imported without errors!");
         }
@@ -84,7 +85,7 @@ public class TestT265Camera
         T265Camera cam = null;
         try
         {
-            cam = new T265Camera(new Pose2d(), 0);
+            cam = new T265Camera(new Transform2d(), 0);
             cam.start((CameraUpdate unused) -> {});
 
             final T265Camera camTemp = cam;

@@ -1,13 +1,14 @@
-// NOTE: This file is available at http://algs4.cs.princeton.edu/14analysis/PolynomialRegression.java.html
+// NOTE: This file is available at
+// http://algs4.cs.princeton.edu/14analysis/PolynomialRegression.java.html
 package com.spartronics4915.lib.math;
 
 /******************************************************************************
- *  Compilation:  javac -cp .:jama.jar PolynomialRegression.java
- *  Execution:    java  -cp .:jama.jar PolynomialRegression
- *  Dependencies: jama.jar StdOut.java
+ * Compilation: javac -cp .:jama.jar PolynomialRegression.java
+ * Execution: java -cp .:jama.jar PolynomialRegression
+ * Dependencies: jama.jar StdOut.java
  *
- *  % java -cp .:jama.jar PolynomialRegression
- *  0.01 n^3 + -1.64 n^2 + 168.92 n + -2113.73 (R^2 = 0.997)
+ * % java -cp .:jama.jar PolynomialRegression
+ * 0.01 n^3 + -1.64 n^2 + 168.92 n + -2113.73 (R^2 = 0.997)
  *
  ******************************************************************************/
 
@@ -75,7 +76,8 @@ public class PolynomialRegression
         QRDecomposition qr = null;
         Matrix matrixX = null;
 
-        // in case Vandermonde matrix does not have full rank, reduce degree until it does
+        // in case Vandermonde matrix does not have full rank, reduce degree until it
+        // does
         while (true)
         {
 

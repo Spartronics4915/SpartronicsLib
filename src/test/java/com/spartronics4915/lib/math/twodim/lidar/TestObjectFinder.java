@@ -11,12 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.spartronics4915.lib.hardware.sensors.RPLidarA1;
-import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
-import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
-import com.spartronics4915.lib.math.twodim.geometry.Translation2d;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.geometry.Transform2d;
+import edu.wpi.first.wpilibj.geometry.Translation2d;
 import com.spartronics4915.lib.subsystems.estimator.RobotStateMap;
 import com.spartronics4915.lib.util.Units;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.opencv.core.Mat;
 
@@ -33,28 +35,7 @@ public class TestObjectFinder {
 
     private final TargetTracker mTargetTracker = new TargetTracker();
 
-    @Test
-    public void testGeom() {
-        var poseOne = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
-        var poseTwo = new Pose2d(1, 1, Rotation2d.fromDegrees(90));
-        System.out.println(poseOne.distance(poseTwo) + ", " + ((1.0/4.0) * 2 * Math.PI) + ", "  + poseTwo.inverse().transformBy(poseOne).log() + ", " + poseOne.getTranslation().getDistance(poseTwo.getTranslation()));
-        // for (int i = 0; i < 20; i++) {
-        //     var poseOne = new Pose2d(0, 0, Rotation2d.fromDegrees(0));
-        //     var poseTwo = new Pose2d(1, 0, Rotation2d.fromDegrees(180));
-        //     System.out.println(poseTwo.inFrameReferenceOf(poseOne) + ", " + poseTwo.inFrameReferenceOf(poseOne).log());
-        // }
-    }
-
-    @Test
-    public void testCoords() {
-        var point = new Pose2d(0, 1, new Rotation2d());
-
-        var fieldToVehicle = new Pose2d(0, 0, Rotation2d.fromDegrees(180));
-        var vehicleToLidar = new Pose2d(1, -1, Rotation2d.fromDegrees(-90));
-
-        System.out.println(fieldToVehicle.transformBy(vehicleToLidar).transformBy(point));
-    }
-
+    @Tag("hardwareDependant")
     @Test
     public void interactivePointcloudTest() {
         final ObjectFinder finder = new ObjectFinder(0.01);
@@ -156,7 +137,7 @@ public class TestObjectFinder {
                     mPointcloud.addAll(pointcloud);
                 }
             }
-        }, new RobotStateMap(), new Pose2d(Units.inchesToMeters(-5.5), Units.inchesToMeters(-14), Rotation2d.fromDegrees(180)));
+        }, new RobotStateMap(), new Transform2d(new Translation2d(Units.inchesToMeters(-5.5), Units.inchesToMeters(-14)), Rotation2d.fromDegrees(180)));
         lidar.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

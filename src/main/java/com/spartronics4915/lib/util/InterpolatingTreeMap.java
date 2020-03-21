@@ -12,7 +12,7 @@ import java.util.TreeMap;
  * @param <V> The type of the value (must implement Interpolable)
  */
 public class InterpolatingTreeMap<K extends InverseInterpolable<K> & Comparable<K>, V extends Interpolable<V>>
-        extends TreeMap<K, V>
+    extends TreeMap<K, V>
 {
 
     private static final long serialVersionUID = 8347275262778054124L;

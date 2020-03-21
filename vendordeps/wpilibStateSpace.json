@@ -1,0 +1,65 @@
+{
+    "fileName": "wpilibStateSpace.json",
+    "name": "wpilibStateSpace",
+    "version": "2020.2.5",
+    "uuid": "82b203c8-9ae1-4031-914c-20460fa41cb1",
+    "mavenUrls": [
+        "https://maven.meshnet0.com/releases/"
+    ],
+    "jsonUrl": "https://maven.meshnet0.com/wpilibStateSpace-latest.json",
+    "cppDependencies": [
+        {
+            "groupId": "edu.wpi.first.wpilibStateSpace",
+            "artifactId": "WPILibStateSpace-cpp",
+            "version": "2020.2.5",
+            "libName": "wpilibStateSpace",
+            "headerClassifier": "headers",
+            "sharedLibrary": true,
+            "skipInvalidPlatforms": true,
+            "binaryPlatforms": [
+                "windowsx86-64",
+                "linuxathena",
+                "osxx86-64",
+                "linuxx86-64"
+            ]
+        },
+        {
+            "groupId": "edu.wpi.first.wpilibStateSpace",
+            "artifactId": "wpilibStateSpace-driver",
+            "version": "2020.2.5",
+            "libName": "WPILibStateSpaceDriver",
+            "headerClassifier": "headers",
+            "sharedLibrary": true,
+            "skipInvalidPlatforms": true,
+            "binaryPlatforms": [
+                "windowsx86-64",
+                "linuxathena",
+                "osxx86-64",
+                "linuxx86-64"
+            ]
+        }
+    ],
+    "javaDependencies": [
+        {
+            "groupId": "edu.wpi.first.wpilibStateSpace",
+            "artifactId": "WPILibStateSpace-java",
+            "version": "2020.2.5"
+        }
+    ],
+    "jniDependencies": [
+        {
+            "groupId": "edu.wpi.first.wpilibStateSpace",
+            "artifactId": "WPILibStateSpace-driver",
+            "version": "2020.2.5",
+            "isJar": false,
+            "skipInvalidPlatforms": true,
+            "validPlatforms": [
+                "windowsx86-64",
+                "linuxathena",
+                "osxx86-64",
+                "linuxx86-64"
+            ]
+        }
+    ]
+}
+

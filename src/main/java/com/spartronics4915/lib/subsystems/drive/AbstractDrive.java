@@ -1,16 +1,15 @@
 package com.spartronics4915.lib.subsystems.drive;
 
 import com.spartronics4915.lib.hardware.motors.SpartronicsMotor;
+import com.spartronics4915.lib.hardware.motors.SpartronicsSimulatedMotor;
 import com.spartronics4915.lib.hardware.sensors.SpartronicsIMU;
-import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
-import com.spartronics4915.lib.math.twodim.physics.DifferentialDrive;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import com.spartronics4915.lib.subsystems.SpartronicsSubsystem;
 
-public abstract class AbstractDrive extends SpartronicsSubsystem implements DifferentialTrackerDriveBase
+public abstract class AbstractDrive extends SpartronicsSubsystem
 {
     protected final SpartronicsMotor mLeftMotor, mRightMotor;
     protected final SpartronicsIMU mIMU;
-    protected final DifferentialDrive mDifferentialDrive;
 
     protected Rotation2d mIMUOffset = new Rotation2d();
 
@@ -18,36 +17,51 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
      * This constructor will set up everything you need. It's protected to allow for
      * a singleton drivetrain.
      */
-    protected AbstractDrive(
-        SpartronicsMotor leftMotor,
-        SpartronicsMotor rightMotor,
-        SpartronicsIMU imu,
-        DifferentialDrive differentialDrive
-    )
+    protected AbstractDrive(SpartronicsMotor leftMotor, SpartronicsMotor rightMotor,
+        SpartronicsIMU imu)
     {
-        mLeftMotor = leftMotor;
-        mRightMotor = rightMotor;
-        mIMU = imu;
-        mDifferentialDrive = differentialDrive;
+        if (leftMotor.hadStartupError() || rightMotor.hadStartupError())
+        {
+            mLeftMotor = new SpartronicsSimulatedMotor(leftMotor.getDeviceNumber(), leftMotor.getFollower().getDeviceNumber());
+            mRightMotor = new SpartronicsSimulatedMotor(rightMotor.getDeviceNumber(), rightMotor.getFollower().getDeviceNumber());
+            mIMU = new SpartronicsIMU()
+            {
+                @Override
+                public Rotation2d getYaw()
+                {
+                    return new Rotation2d();
+                }
+            };
+
+            logInitialized(false);
+        }
+        else
+        {
+            mLeftMotor = leftMotor;
+            mRightMotor = rightMotor;
+            mIMU = imu;
+
+            logInitialized(true);
+        }
     }
 
     /**
      * This sets the heading of the IMU, but this should almost exclusively be
      * called by RobotStateEstimator, because that is the single source of truth for
      * robot heading.
-     * 
+     *
      * @param heading Heading to set the IMU to.
      */
     public void setIMUHeading(Rotation2d heading)
     {
-        mIMUOffset = getIMUHeading().rotateBy(heading.inverse());
+        mIMUOffset = mIMU.getYaw().minus(heading);
     }
 
     /**
      * This gets the heading of the IMU, but this should almost exclusively be
      * called by RobotStateMap, which is the single source of truth for all matters
      * of robot pose (including heading).
-     * 
+     *
      * @return Heading of the IMU.
      */
     public Rotation2d getIMUHeading()
@@ -55,9 +69,15 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
         return mIMU.getYaw().rotateBy(mIMUOffset);
     }
 
+    public double getTurretAngle()
+    {
+        return 0;
+    }
+
     public void arcadeDrive(double linearPercent, double rotationPercent)
     {
-        double maxInput = Math.copySign(Math.max(Math.abs(linearPercent), Math.abs(rotationPercent)), linearPercent);
+        double maxInput = Math.copySign(Math.max(Math.abs(linearPercent), 
+                                        Math.abs(rotationPercent)), linearPercent);
 
         double leftMotorOutput, rightMotorOutput;
 
@@ -95,22 +115,27 @@ public abstract class AbstractDrive extends SpartronicsSubsystem implements Diff
 
     public void tankDrive(double leftPercent, double rightPercent)
     {
-        mLeftMotor.setDutyCycle(leftPercent);
-        mRightMotor.setDutyCycle(rightPercent);
+        mLeftMotor.setPercentOutput(leftPercent);
+        mRightMotor.setPercentOutput(rightPercent);
     }
 
-    @Override
-    public SpartronicsMotor getLeftMotor() {
+    public SpartronicsMotor getLeftMotor()
+    {
         return mLeftMotor;
     }
 
-    @Override
-    public SpartronicsMotor getRightMotor() {
+    public SpartronicsMotor getRightMotor()
+    {
         return mRightMotor;
     }
 
     @Override
-    public DifferentialDrive getDifferentialDrive() {
-        return mDifferentialDrive;
+    public void periodic()
+    {
+        dashboardPutNumber("imuHeading", mIMU.getYaw().getDegrees());
+        dashboardPutNumber("imuHeadingAdjusted", getIMUHeading().getDegrees());
+
+        dashboardPutNumber("leftSpeed", getLeftMotor().getEncoder().getVelocity());
+        dashboardPutNumber("rightSpeed", getRightMotor().getEncoder().getVelocity());
     }
 }

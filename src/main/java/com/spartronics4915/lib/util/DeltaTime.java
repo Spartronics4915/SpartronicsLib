@@ -1,6 +1,7 @@
 package com.spartronics4915.lib.util;
 
-public class DeltaTime {
+public class DeltaTime
+{
     /** Seconds */
     private double mStartTime = -1;
     /** Seconds */
@@ -8,33 +9,37 @@ public class DeltaTime {
     /** Seconds */
     double mDeltaTime = 0.0;
 
-
-    public double getDeltaTimeSeconds() {
+    public double getDeltaTimeSeconds()
+    {
         return mDeltaTime;
     }
 
-    public double getCurrentTimeSeconds() {
+    public double getCurrentTimeSeconds()
+    {
         return mCurrentTime;
     }
 
-    public double getStartTime() {
-        if (mStartTime < 0) {
+    public double getStartTime()
+    {
+        if (mStartTime < 0)
             throw new RuntimeException("Can't get start time if DeltaTime has never been updated");
-        }
+
         return mStartTime;
     }
 
-    public double updateTime(double newTimeSeconds) {
-        if (mCurrentTime < 0) {
+    public double updateTime(double newTimeSeconds)
+    {
+        if (mCurrentTime < 0)
             mDeltaTime = 0;
-        } else {
+        else
             mDeltaTime = newTimeSeconds - mCurrentTime;
-        }
+
         mCurrentTime = newTimeSeconds;
         return mDeltaTime;
     }
 
-    public void reset() {
+    public void reset()
+    {
         mCurrentTime = -1;
     }
 }

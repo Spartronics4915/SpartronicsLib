@@ -5,8 +5,8 @@ package com.spartronics4915.lib.util;
  *
  * @see InterpolatingTreeMap
  */
-public class InterpolatingLong implements Interpolable<InterpolatingLong>, InverseInterpolable<InterpolatingLong>,
-        Comparable<InterpolatingLong>
+public class InterpolatingLong implements Interpolable<InterpolatingLong>,
+    InverseInterpolable<InterpolatingLong>, Comparable<InterpolatingLong>
 {
 
     public Long value = 0L;

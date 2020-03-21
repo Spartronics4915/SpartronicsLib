@@ -1,52 +1,65 @@
 package com.spartronics4915.lib.subsystems.estimator;
 
-import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
-import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.geometry.Twist2d;
 import com.spartronics4915.lib.util.Interpolable;
 import com.spartronics4915.lib.util.InterpolatingDouble;
 import com.spartronics4915.lib.util.InterpolatingTreeMap;
 
+/**
+ * Container for time-indexed state estimates of a robot.
+ * Used to monitor robot state history and to infer state at
+ * intermediate points in time.  Currently we don't support an
+ * explicit extrapolate method.  Position can be extrapolated by
+ * applying the velocity * dtime to the sample pose.
+ */
 public class RobotStateMap
 {
-
-    private static final int kObservationBufferSize = 100;
+    private static final int kObservationBufferSize = 300;
 
     static public class State implements Interpolable<State>
     {
-
         public Pose2d pose;
-        public Twist2d integrationVelocity, predictedVelocity;
         public double timestamp;
 
+        /**
+         * default constructor
+         */
         public State()
         {
             this.pose = new Pose2d();
-            this.integrationVelocity = new Twist2d();
-            this.predictedVelocity = new Twist2d();
             this.timestamp = 0;
         }
 
+        /**
+         * copy constructor
+         */
         public State(State other)
         {
             this.pose = other.pose;
-            this.integrationVelocity = other.integrationVelocity;
-            this.predictedVelocity = other.predictedVelocity;
             this.timestamp = other.timestamp;
         }
 
-        public State(Pose2d pose, Twist2d iVel, Twist2d pVel, double ts)
-        {
-            this.pose = pose;
-            this.integrationVelocity = iVel;
-            this.predictedVelocity = pVel;
-            this.timestamp = ts;
-        }
-
+        /**
+         * constructor variant that doesn't care about turretAngle
+         * @param p
+         * @param ts
+         */
         public State(Pose2d p, double ts)
         {
             this.pose = p;
-            this.integrationVelocity = new Twist2d();
-            this.predictedVelocity = new Twist2d();
+            this.timestamp = ts;
+        }
+
+        /**
+         * constructor variant that does care about turretAngle
+         * @param p
+         * @param turretAngle
+         * @param ts
+         */
+        public State(Pose2d p, double turretAngle, double ts)
+        {
+            this.pose = p;
             this.timestamp = ts;
         }
 
@@ -59,11 +72,8 @@ public class RobotStateMap
                 return new State(other);
             else
             {
-                final State s = new State(
-                        this.pose.interpolate(other.pose, pct),
-                        this.integrationVelocity.interpolate(other.integrationVelocity, pct),
-                        this.predictedVelocity.interpolate(other.predictedVelocity, pct),
-                        this.timestamp + pct * (other.timestamp - this.timestamp));
+                final State s = new State(interpolatePose(this.pose, other.pose, pct),
+                    this.timestamp + pct * (other.timestamp - this.timestamp));
                 return s;
             }
         }
@@ -79,12 +89,25 @@ public class RobotStateMap
 
     /**
      * Resets the field to robot transform (robot's position on the field)
+     * Default value of turretAngle reset is currently zero.
      */
     public synchronized void reset(double startTime, Pose2d initialPose)
     {
         mStateMap = new InterpolatingTreeMap<>(kObservationBufferSize);
-        mStateMap.put(new InterpolatingDouble(startTime),
-                new State(initialPose, startTime));
+        mStateMap.put(new InterpolatingDouble(startTime), new State(initialPose, startTime));
+        mDistanceDriven = 0.0;
+    }
+
+    /**
+     * Resets the field to robot transform (robot's position on the field)
+     * as well as the turretAngle.
+     */
+    public synchronized void reset(double startTime, Pose2d initialPose, 
+                                    double turretAngle)
+    {
+        mStateMap = new InterpolatingTreeMap<>(kObservationBufferSize);
+        mStateMap.put(new InterpolatingDouble(startTime), 
+                      new State(initialPose, turretAngle, startTime));
         mDistanceDriven = 0.0;
     }
 
@@ -93,22 +116,10 @@ public class RobotStateMap
         mDistanceDriven = 0.0;
     }
 
-    public synchronized void addObservations(double timestamp,
-            Pose2d pose,
-            Twist2d velI,
-            Twist2d velP)
+    public synchronized void addObservations(double timestamp, Pose2d pose)
     {
         InterpolatingDouble ts = new InterpolatingDouble(timestamp);
-        mStateMap.put(ts, new State(pose, velI, velP, timestamp));
-        mDistanceDriven += velI.dx; // Math.hypot(velocity.dx, velocity.dy); 
-        // do we care about time here?
-        //  no: if dx is measured in distance/loopinterval (loopinterval == 1)
-        //     
-        // do we care about dy here? 
-        //  no: if velocity is in robot coords (no transverse motion expected)
-        //  yes: if velocity is in field coords
-
-        // The answer to both questions is no, btw.
+        mStateMap.put(ts, new State(pose, timestamp));
     }
 
     /**
@@ -142,5 +153,19 @@ public class RobotStateMap
     public synchronized double getDistanceDriven()
     {
         return mDistanceDriven;
+    }
+
+    private static Pose2d interpolatePose(Pose2d startPose, Pose2d endPose, double t)
+    {
+        if (t <= 0)
+        {
+            return startPose;
+        }
+        else if (t >= 1)
+        {
+            return endPose;
+        }
+        final Twist2d twist = startPose.log(endPose);
+        return startPose.exp(new Twist2d(twist.dx * t, twist.dy * t, twist.dtheta * t));
     }
 }

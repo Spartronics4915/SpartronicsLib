@@ -1,8 +1,8 @@
 package com.spartronics4915.lib.util;
 
-import com.spartronics4915.lib.math.twodim.geometry.Pose2d;
-import com.spartronics4915.lib.math.twodim.geometry.Rotation2d;
-import com.spartronics4915.lib.math.twodim.geometry.Twist2d;
+import edu.wpi.first.wpilibj.geometry.Pose2d;
+import edu.wpi.first.wpilibj.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.geometry.Twist2d;
 
 /**
  * Provides forward and inverse kinematics equations for the robot modeling the
@@ -21,30 +21,12 @@ public class Kinematics
         mScrubFactor = scrubFactor;
     }
 
-    /**
-     * Forward kinematics using only encoders, rotation is implicit (less accurate
-     * than below, but useful for predicting motion)
-     */
-    public Twist2d forwardKinematics(double leftWheelDelta, double rightWheelDelta)
-    {
-        double delta_rotation = (rightWheelDelta - leftWheelDelta)
-                / (mTrackWidthInches * mScrubFactor);
-        return forwardKinematics(leftWheelDelta, rightWheelDelta, delta_rotation);
-    }
-
-    public Twist2d forwardKinematics(double leftWheelDelta, double rightWheelDelta,
-            double deltaRotationRads)
-    {
-        final double dx = (leftWheelDelta + rightWheelDelta) / 2.0;
-        return new Twist2d(dx, 0.0, Rotation2d.fromDegrees(deltaRotationRads));
-    }
-
     public Twist2d forwardKinematics(Rotation2d prevHeading, double leftWheelDelta, double rightWheelDelta,
-            Rotation2d currentHeading)
+                                     Rotation2d currentHeading)
     {
         final double dx = (leftWheelDelta + rightWheelDelta) / 2.0;
         final double dy = 0.0;
-        return new Twist2d(dx, dy, prevHeading.inverse().rotateBy(currentHeading));
+        return new Twist2d(dx, dy, prevHeading.unaryMinus().plus(currentHeading).getRadians());
     }
 
     /**
@@ -53,6 +35,6 @@ public class Kinematics
      */
     public Pose2d integrateForwardKinematics(Pose2d currentPose, Twist2d forwardKinematics)
     {
-        return currentPose.transformBy(forwardKinematics.exp());
+        return currentPose.exp(forwardKinematics);
     }
 }
