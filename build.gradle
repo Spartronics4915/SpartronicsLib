@@ -1,8 +1,14 @@
 plugins {
     id "java"
-    id "edu.wpi.first.GradleRIO" version "2020.1.2"
     id "maven"
     id "maven-publish"
+
+    id "edu.wpi.first.GradleRIO" version "2020.1.2" apply false
+
+    id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2020.1' apply false
+    id 'edu.wpi.first.NativeUtils' version '2020.1.0' apply false
+    id 'edu.wpi.first.GradleJni' version '0.9.1' apply false
+    id 'edu.wpi.first.GradleVsCode' version '0.9.4' apply false
 }
 
 // Makes composite builds work
@@ -11,58 +17,49 @@ project.group = "com.github.Spartronics4915"
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
-// Set this to true to enable desktop support.
-def includeDesktopSupport = true
+allprojects {
+    apply plugin: "java"
+    apply plugin: "maven"
+    apply plugin: "maven-publish"
 
-// Maven central needed for JUnit
-repositories {
-    mavenCentral()
-    maven {url "https://jitpack.io/"}
-}
+    repositories {
+        // Maven central needed for JUnit
+        mavenCentral()
+        maven { url "https://jitpack.io/" }
+    }
 
-dependencies {
-    implementation wpi.deps.wpilib()
-    nativeZip wpi.deps.wpilibJni(wpi.platforms.roborio)
-    nativeDesktopZip wpi.deps.wpilibJni(wpi.platforms.desktop)
+    dependencies {
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.2")
+        testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")
+    }
 
-    implementation wpi.deps.vendor.java()
-    nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
-    nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = "com.spartronics4915"
+                artifactId = "SpartronicsLib"
+                version = "2020.1.0"
 
-    implementation("gov.nist.math:jama:1.0.3")
-    implementation("org.ejml:ejml-simple:0.38")
-    implementation("org.apache.commons:commons-math3:3.6.1")
-    implementation("com.fazecast:jSerialComm:2.4.1")
+                from components.java
+            }
+        }
+    }
 
-    testImplementation("org.knowm.xchart:xchart:3.2.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.2")
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.2")
-
-    simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId = "com.spartronics4915"
-            artifactId = "SpartronicsLib"
-            version = "2020.1.0"
-
-            from components.java
+    test {
+        useJUnitPlatform {
+            // Some tests only work if you have the right stuff plugged in
+            // Pass -PallTests if you want tests with the excluded tags
+            if (!project.hasProperty("allTests")) {
+                excludeTags "hardwareDependant"
+            }
+        }
+        testLogging {
+            events "PASSED", "SKIPPED", "FAILED"
+            exceptionFormat "full"
         }
     }
 }
 
-test {
-    useJUnitPlatform {
-        // Some tests only work if you have the right stuff plugged in
-        // Pass -PallTests if you want tests with the excluded tags
-        if (!project.hasProperty("allTests")) {
-            excludeTags "hardwareDependant"
-        }
-    }
-    testLogging {
-        events "PASSED", "SKIPPED", "FAILED"
-        exceptionFormat "full"
-    }
+wrapper {
+    gradleVersion = "6.0.1"
 }

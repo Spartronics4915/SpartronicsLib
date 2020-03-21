@@ -1,0 +1,88 @@
+plugins {
+    id "java"
+    id "cpp"
+    id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin'
+    id 'edu.wpi.first.NativeUtils'
+    id 'edu.wpi.first.GradleJni'
+    id 'edu.wpi.first.GradleVsCode'
+}
+
+if (project.hasProperty('releaseMode')) {
+    wpilibRepositories.addAllReleaseRepositories(project)
+} else {
+    wpilibRepositories.addAllDevelopmentRepositories(project)
+}
+
+// Apply C++ configuration
+apply from: 'config.gradle'
+
+// Apply Java configuration
+dependencies {
+    compile 'edu.wpi.first.cscore:cscore-java:2019.+'
+    compile 'edu.wpi.first.cameraserver:cameraserver-java:2019.+'
+    compile 'edu.wpi.first.ntcore:ntcore-java:2019.+'
+    compile 'edu.wpi.first.wpilibj:wpilibj-java:2019.+'
+    compile 'edu.wpi.first.wpiutil:wpiutil-java:2019.+'
+    compile 'edu.wpi.first.hal:hal-java:2019.+'
+    compile 'edu.wpi.first.thirdparty.frc2020.opencv:opencv-java:3.4.7-1'
+}
+
+// Set up exports properly
+nativeUtils {
+//    TODO: This is Java only, so maybe I don't need the non-JNI C++ exportsConfigs
+//    exportsConfigs {
+//        // Main library is just default empty. This will export everything
+//        Vendor {
+//        }
+//    }
+    privateExportsConfigs {
+        // Only export explicit symbols from driver library
+        VendorDriver {
+            exportsFile = project.file("src/main/driver/symbols.txt")
+        }
+    }
+}
+
+model {
+    components {
+//        TODO: Can I just get rid of this?
+//        Vendor(NativeLibrarySpec) {
+//            sources {
+//                cpp {
+//                    source {
+//                        srcDirs 'src/main/native/cpp'
+//                        include '**/*.cpp'
+//                    }
+//                    exportedHeaders {
+//                        srcDirs 'src/main/native/include'
+//                    }
+//                }
+//            }
+//            binaries.all {
+//                lib library: 'VendorDriver', linkage: 'shared'
+//            }
+//            nativeUtils.useRequiredLibrary(it, 'wpilib_shared')
+//        }
+
+        SpartronicsLibDriver(JniNativeLibrarySpec) {
+            enableCheckTask true
+            javaCompileTasks << compileJava
+            jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.roborio)
+            sources {
+                cpp {
+                    source {
+                        srcDirs 'src/main/driver/cpp'
+                        include '**/*.cpp'
+                    }
+                    exportedHeaders {
+                        srcDirs 'src/main/driver/include'
+                    }
+                }
+            }
+
+            nativeUtils.useRequiredLibrary(it, "driver_shared")
+        }
+    }
+}
+
+apply from: 'publish.gradle'

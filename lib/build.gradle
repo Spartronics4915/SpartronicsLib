@@ -1,0 +1,25 @@
+plugins {
+    id "edu.wpi.first.GradleRIO"
+}
+
+// Makes composite builds work
+project.group = "com.github.Spartronics4915"
+
+dependencies {
+    implementation wpi.deps.wpilib()
+    nativeZip wpi.deps.wpilibJni(wpi.platforms.roborio)
+    nativeDesktopZip wpi.deps.wpilibJni(wpi.platforms.desktop)
+
+    implementation wpi.deps.vendor.java()
+    nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
+    nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
+
+    implementation("gov.nist.math:jama:1.0.3")
+    implementation("org.ejml:ejml-simple:0.38")
+    implementation("org.apache.commons:commons-math3:3.6.1")
+    implementation("com.fazecast:jSerialComm:2.4.1")
+
+    testImplementation("org.knowm.xchart:xchart:3.2.2")
+
+    simulation wpi.deps.sim.gui(wpi.platforms.desktop, false)
+}
