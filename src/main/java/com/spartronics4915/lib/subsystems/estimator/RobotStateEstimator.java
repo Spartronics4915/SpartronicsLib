@@ -168,7 +168,7 @@ public class RobotStateEstimator extends SpartronicsSubsystem
         final double loopintervalToSeconds = 1 / (Timer.getFPGATimestamp() - last.timestamp);
         final Twist2d normalizedIVal = iVal.scaled(loopintervalToSeconds);
 
-        mSLAMCamera.sendOdometry(pVal);
+        mSLAMCamera.sendOdometry(normalizedIVal);
     }
 
     public void enable()

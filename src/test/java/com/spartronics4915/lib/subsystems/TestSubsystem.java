@@ -22,9 +22,4 @@ public class TestSubsystem extends SpartronicsSubsystem
     {
         assertTrue(super.getClassName().equals("TestSubsystem"));
     }
-
-    @Override
-    public void outputTelemetry()
-    {
-    }
 }

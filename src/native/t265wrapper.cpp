@@ -192,7 +192,7 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
                 if (env)
                     env->ThrowNew(exception, e.what());
                 else
-                    std::cerr << "Exception in frame consumer callback could not be thrown in Java code. Exception was: " << e.what() << std::endl;
+                    std::cerr << "Exception in frame consumer callback could not be thrown in Java code. Exception was: " << e.what() << "\n";
             }
         };
 
@@ -220,9 +220,13 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_sendOdometryRaw(JN
         ensureCache(env, thisObj);
 
         auto devAndSensors = getDeviceFromClass(env, thisObj);
+        if (!devAndSensors->isRunning)
+            return;
+            // throw std::runtime_error("Can't send odometry data when the device isn't running");
+
         // jints are 32 bit and are signed so we have to be careful
         if (sensorId > UINT8_MAX || sensorId < 0)
-            env->ThrowNew(exception, "sensorId is out of range of a 32-bit unsigned integer (is it negative?)");
+            env->ThrowNew(exception, "sensorId is out of range of a 8-bit unsigned integer");
 
         std::lock_guard<std::mutex> lock(devAndSensors->frameNumMutex);
         devAndSensors->wheelOdometrySensor->send_wheel_odometry(sensorId, devAndSensors->lastRecvdFrameNum, rs2_vector{.x = -yVel, .y = 0.0, .z = -xVel});
@@ -248,6 +252,9 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_exportRelocalizati
 
         // Get data from sensor and write
         auto devAndSensors = getDeviceFromClass(env, thisObj);
+        if (!devAndSensors->isRunning)
+            throw std::runtime_error("Can't export a relocalization map when the device isn't running (have you already exported?)");
+
         devAndSensors->pipeline->stop();
         devAndSensors->isRunning = false;
 
@@ -263,10 +270,11 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_exportRelocalizati
 
         auto data = devAndSensors->poseSensor->export_localization_map();
         file.write(reinterpret_cast<const char *>(data.begin().base()), data.size());
+        file.close();
 
         env->ReleaseStringUTFChars(savePath, pathNativeStr);
 
-        // File automatically get closed at end of scope
+        std::cout << "[SpartronicsLib] Relocalization map exported\n";
 
         // TODO: Camera never gets started again...
         // If we try to call pipeline->start() it doesn't work. Bug in librealsense?
@@ -358,6 +366,9 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *en
 
             toBeCleaned.pop_back();
         }
+        
+        // We use std::endl because we *want* to flush the buffer
+        // (The program is about to exit and messages get lost)
         std::cout << "[SpartronicsLib] T265 native wrapper gracefully shut down" << std::endl;
     }
     catch (std::exception &e)
@@ -368,7 +379,7 @@ void Java_com_spartronics4915_lib_hardware_sensors_T265Camera_cleanup(JNIEnv *en
         }
         else
         {
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << "\n";
         }
     }
 }
