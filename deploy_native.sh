@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 YEAR=2019
-REALSENSE_VERSION_SHORT="2.29"
+REALSENSE_VERSION_SHORT="2.34"
 REALSENSE_VERSION=$REALSENSE_VERSION_SHORT".0"
 LIB_PATH=$(readlink -f ~/.gradle/toolchains/frc/$YEAR/roborio/arm-frc$YEAR-linux-gnueabi/lib)
 RIO_LIB_PATH="/usr/local/frc/third-party/lib/"

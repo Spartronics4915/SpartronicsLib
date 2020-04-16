@@ -1,5 +1,7 @@
 package com.spartronics4915.lib.hardware.sensors;
 
+import java.nio.file.Paths;
+
 import java.util.function.Consumer;
 
 import edu.wpi.first.wpilibj.geometry.Pose2d;
@@ -30,7 +32,7 @@ public class T265Camera {
 
     static {
         try {
-            System.loadLibrary("spartronicsnative");
+            System.load(Paths.get(System.getProperty("user.home"), "libspartronicsnative.so").toAbsolutePath().toString());
 
             // Cleanup is quite tricky for us, because the native code has no idea when Java
             // will be done. (This is why smart pointers don't really make sense in the native code.)
