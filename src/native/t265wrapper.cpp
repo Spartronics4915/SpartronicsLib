@@ -109,6 +109,7 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
 
         // Get the currently used device
         auto profile = config.resolve(*pipeline);
+
         auto device = profile.get_device();
         if (!device.is<rs2::tm2>())
         {
@@ -130,12 +131,6 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
             throw std::runtime_error("Selected device does not support wheel odometry inputs");
         if (!pose)
             throw std::runtime_error("Selected device does not have a pose sensor");
-
-        // Ensure that pipeline->start(...) chooses the devices we just got
-        auto poseSerial = pose->get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
-        auto odomSerial = pose->get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
-        config.enable_device(poseSerial);
-        config.enable_device(odomSerial);
 
         // Import the relocalization map, if the path is nonempty
         auto pathNativeStr = env->GetStringUTFChars(mapPath, 0);
@@ -165,7 +160,7 @@ jlong Java_com_spartronics4915_lib_hardware_sensors_T265Camera_newCamera(JNIEnv 
             try
             {
                 // Attaching the thread is expensive... TODO: Cache env?
-                int error = jvm->AttachCurrentThread(&env, nullptr);
+                int error = jvm->AttachCurrentThread(reinterpret_cast<void **>(&env), nullptr);
                 if (error)
                     throw std::runtime_error("Couldn't attach callback thread to jvm");
 
