@@ -1,12 +1,12 @@
 {
-    "fileName": "wpilibStateSpace.json",
-    "name": "wpilibStateSpace",
+    "fileName": "WPILibStateSpace.json",
+    "name": "WPILibStateSpace",
     "version": "2020.2.5",
     "uuid": "82b203c8-9ae1-4031-914c-20460fa41cb1",
     "mavenUrls": [
-        "https://maven.meshnet0.com/releases/"
+        "https://maven.0x778.tk/"
     ],
-    "jsonUrl": "https://maven.meshnet0.com/wpilibStateSpace-latest.json",
+    "jsonUrl": "https://maven.0x778.tk/edu/wpi/first/wpilibStateSpace/wpilibStateSpace.json",
     "cppDependencies": [
         {
             "groupId": "edu.wpi.first.wpilibStateSpace",
@@ -62,4 +62,3 @@
         }
     ]
 }
-
