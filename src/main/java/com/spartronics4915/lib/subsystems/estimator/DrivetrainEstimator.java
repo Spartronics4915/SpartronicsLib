@@ -9,7 +9,8 @@ import edu.wpi.first.wpilibj.geometry.Twist2d;
 import com.spartronics4915.lib.util.Logger;
 
 import edu.wpi.first.wpilibj.estimator.ExtendedKalmanFilter;
-import edu.wpi.first.wpilibj.math.StateSpaceUtils;
+import edu.wpi.first.wpilibj.math.Discretization;
+import edu.wpi.first.wpilibj.math.StateSpaceUtil;
 import edu.wpi.first.wpiutil.math.MatBuilder;
 import edu.wpi.first.wpiutil.math.Matrix;
 import edu.wpi.first.wpiutil.math.Nat;
@@ -19,9 +20,9 @@ import edu.wpi.first.wpiutil.math.numbers.N6;
 
 /**
  * Wraps the Extended Kalman Filter I wrote and contributed to the prerelease version of WPILibStateSpace to fuse encoder odometry, VSLAM, and PnP to localize the robot.
- * 
+ *
  * We also do latency compensation for the vision.
- * 
+ *
  * Our state-space system is:
  *
  * x = [[x, y, dtheta]]^T in the field coordinate system
@@ -35,7 +36,6 @@ import edu.wpi.first.wpiutil.math.numbers.N6;
  */
 public class DrivetrainEstimator
 {
-
     private static final double kNominalDt = 0.01;
     private static final int kMaxPastObserverStates = 200;
 
@@ -51,13 +51,13 @@ public class DrivetrainEstimator
     public DrivetrainEstimator(Matrix<N3, N1> stateStdDevs, Matrix<N6, N1> measurementStdDevs,
         double slamStdDevsPerMeter, Pose2d beginningRobotPose)
     {
-        mObserver = new ExtendedKalmanFilter<N3, N3, N3>(Nat.N3(), Nat.N3(), Nat.N3(), this::f,
-            (x, u) -> x, stateStdDevs,
+        mObserver = new ExtendedKalmanFilter<N3, N3, N3>(Nat.N3(), Nat.N3(), Nat.N3(),
+            this::f, (x, u) -> x, stateStdDevs,
             new MatBuilder<>(Nat.N3(), Nat.N1()).fill(measurementStdDevs.get(0, 0),
                 measurementStdDevs.get(1, 0), measurementStdDevs.get(2, 0)),
-            false, kNominalDt);
-        mVisionObserver = new ExtendedKalmanFilter<>(Nat.N3(), Nat.N3(), Nat.N6(), this::f, this::h,
-            stateStdDevs, measurementStdDevs, false, kNominalDt);
+            kNominalDt);
+        mVisionObserver = new ExtendedKalmanFilter<>(Nat.N3(), Nat.N3(), Nat.N6(),
+            this::f, this::h, stateStdDevs, measurementStdDevs, kNominalDt);
         mMeasurementStdDevs = measurementStdDevs;
 
         mBeginningRobotPose = beginningRobotPose;
@@ -124,8 +124,6 @@ public class DrivetrainEstimator
 
     /**
      * @param slamRobotPose The robot pose just given by the vSLAM camera.
-     * @param 
-     * 
      * @return The estimated pose of the robot.
      */
     public synchronized Pose2d update(Pose2d slamRobotPose, double dleftMeters, double drightMeters,
@@ -158,8 +156,8 @@ public class DrivetrainEstimator
                 mMeasurementStdDevs.get(3, 0),
                 mMeasurementStdDevs.get(4, 0),
                 mMeasurementStdDevs.get(5, 0));
-            var contR = StateSpaceUtils.makeCovMatrix(Nat.N6(), measStdDevs);
-            var discR = StateSpaceUtils.discretizeR(contR, kNominalDt);
+            var contR = StateSpaceUtil.makeCovarianceMatrix(Nat.N6(), measStdDevs);
+            var discR = Discretization.discretizeR(contR, kNominalDt);
 
             var y = new MatBuilder<>(Nat.N6(), Nat.N1()).fill(slamRobotPose.getTranslation().getX(),
                 slamRobotPose.getTranslation().getY(), slamRobotPose.getRotation().getRadians(),
@@ -181,8 +179,8 @@ public class DrivetrainEstimator
                 mSlamStdDevsPerMeter * distFromBeginningMeters,
                 mSlamStdDevsPerMeter * distFromBeginningMeters,
                 mSlamStdDevsPerMeter * distFromBeginningMeters);
-            var contR = StateSpaceUtils.makeCovMatrix(Nat.N3(), measStdDevs);
-            var discR = StateSpaceUtils.discretizeR(contR, kNominalDt);
+            var contR = StateSpaceUtil.makeCovarianceMatrix(Nat.N3(), measStdDevs);
+            var discR = Discretization.discretizeR(contR, kNominalDt);
 
             mObserver.correct(Nat.N3(), u, y, (x, _u) -> x, discR);
             mObserver.predict(u, kNominalDt);

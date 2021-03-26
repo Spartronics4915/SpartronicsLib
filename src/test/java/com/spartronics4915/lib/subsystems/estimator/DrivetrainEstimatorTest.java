@@ -18,7 +18,7 @@ import org.knowm.xchart.XYChartBuilder;
 
 import edu.wpi.first.wpilibj.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveKinematics;
-import edu.wpi.first.wpilibj.math.StateSpaceUtils;
+import edu.wpi.first.wpilibj.math.StateSpaceUtil;
 import edu.wpi.first.wpiutil.math.MatBuilder;
 import edu.wpi.first.wpiutil.math.Matrix;
 import edu.wpi.first.wpiutil.math.Nat;
@@ -87,7 +87,7 @@ public class DrivetrainEstimatorTest
                     groundtruthState.poseMeters.getRotation().getRadians()
                         - lastPose.getRotation().getRadians());
             }
-            u = u.plus(StateSpaceUtils.makeWhiteNoiseVector(Nat.N3(),
+            u = u.plus(StateSpaceUtil.makeWhiteNoiseVector(
                 new MatBuilder<>(Nat.N3(), Nat.N1()).fill(0.002, 0.002, 0.001)));
             lastPose = groundtruthState.poseMeters;
 
